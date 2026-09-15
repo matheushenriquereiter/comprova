@@ -1,0 +1,29 @@
+opencollection: 1.0.0
+
+info:
+  name: messaging-api-bruno
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+request:
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXRoZXVzIiwicHVycG9zZSI6ImFjY2Vzc190b2tlbiIsImlhdCI6MTc4OTUxMDY2MiwiZXhwIjoxNzg5NTE0MjYyfQ.lIv-L5iX5YcF7i-agIVFL1IQIVQ9ov6EhhJLpCUnXurx8XT6X37JpxPsncmfCpUoE3dzlJpLXyKwdUc9kzPL7Q
+  variables:
+    - name: url
+      value: http://localhost:8080
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git
