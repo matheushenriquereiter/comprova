@@ -20,7 +20,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Competence {
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "competence_seq_gen")
     @SequenceGenerator(
