@@ -2,7 +2,6 @@ package org.example.comprova.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.comprova.dto.*;
-import org.example.comprova.enums.UserRole;
 import org.example.comprova.exceptions.BusinessException;
 import org.example.comprova.model.Candidate;
 import org.example.comprova.model.Company;
@@ -63,7 +62,7 @@ public class AuthService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid credentials");
         }
 
-        return new TokenDTO(jwtService.generateAccessToken(user.getUsername()));
+        return new TokenDTO(jwtService.generateToken(user.getUsername(), user.getAuthorities()));
     }
 
     public UserResponseDTO me(String username) {

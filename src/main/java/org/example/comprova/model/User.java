@@ -2,12 +2,10 @@ package org.example.comprova.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
-import org.example.comprova.enums.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -42,7 +40,7 @@ public abstract class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    public User(String username, String email, String password) {
+    protected User(String username, String email, String password) {
         this.username = username;
         this.email = email;
         this.password = password;
