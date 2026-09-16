@@ -1,7 +1,7 @@
 opencollection: 1.0.0
 
 info:
-  name: messaging-api-bruno
+  name: Comprova
 config:
   proxy:
     inherit: true
@@ -17,7 +17,7 @@ config:
 request:
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXRoZXVzIiwicHVycG9zZSI6ImFjY2Vzc190b2tlbiIsImlhdCI6MTc4OTUxMDY2MiwiZXhwIjoxNzg5NTE0MjYyfQ.lIv-L5iX5YcF7i-agIVFL1IQIVQ9ov6EhhJLpCUnXurx8XT6X37JpxPsncmfCpUoE3dzlJpLXyKwdUc9kzPL7Q
+    token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXRoZXVzIiwicHVycG9zZSI6ImFjY2Vzc190b2tlbiIsImlhdCI6MTc4OTUxNzcxMywiZXhwIjoxNzg5NTIxMzEzfQ.VGLTJlT2SkTDOxqbvhPq38VvVdlaCReumsflTkIuzyABCYttwPZF9oVZq72loD1p_6wj7FJuzQN7ehprly1iiA
   variables:
     - name: url
       value: http://localhost:8080

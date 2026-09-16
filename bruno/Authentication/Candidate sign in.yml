@@ -1,7 +1,7 @@
 info:
-  name: User sign in
+  name: Candidate sign in
   type: http
-  seq: 1
+  seq: 4
 
 http:
   method: POST
@@ -20,3 +20,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

@@ -1,0 +1,23 @@
+info:
+  name: Company sign in
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/auth/sign-in"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "mathenriquereiter@gmail.com",
+        "password": "matheus123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

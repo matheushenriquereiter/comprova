@@ -1,28 +1,34 @@
 package org.example.comprova.controller;
 
 import jakarta.validation.Valid;
-import org.example.comprova.dto.TokenDTO;
-import org.example.comprova.dto.UserLoginDTO;
-import org.example.comprova.dto.UserRegisterDTO;
-import org.example.comprova.dto.UserResponseDTO;
+import lombok.RequiredArgsConstructor;
+import org.example.comprova.dto.*;
 import org.example.comprova.service.AuthService;
+import org.example.comprova.service.JwtService;
 import org.example.comprova.util.BearerTokenUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
+    @PostMapping("/sign-up/candidate")
+    public ResponseEntity<Void> signUpCandidate(@Valid @RequestBody CandidateRegisterDTO candidateRegisterDTO) {
+        authService.signUpCandidate(candidateRegisterDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/sign-up")
-    public ResponseEntity<Void> signUp(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
-        authService.signUp(userRegisterDTO);
+    @PostMapping("/sign-up/company")
+    public ResponseEntity<Void> signUpCompany(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
+        authService.signUpCompany(userRegisterDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -35,9 +41,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> me(@RequestHeader("Authorization") String bearerToken) {
-        String token = BearerTokenUtil.extractToken(bearerToken);
-        UserResponseDTO userResponseDTO = authService.me(token);
+    public ResponseEntity<UserResponseDTO> me(Principal principal) {
+        UserResponseDTO userResponseDTO = authService.me(principal.getName());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
     }

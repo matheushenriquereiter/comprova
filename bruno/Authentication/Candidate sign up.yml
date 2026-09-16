@@ -1,0 +1,25 @@
+info:
+  name: Candidate sign up
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{url}}/auth/sign-up/candidate"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "matheus",
+        "email": "mathenriquereiter@gmail.com",
+        "password": "matheus123",
+        "cpf": "141.141.141-28"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

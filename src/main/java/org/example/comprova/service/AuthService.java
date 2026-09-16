@@ -1,11 +1,11 @@
 package org.example.comprova.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.comprova.dto.TokenDTO;
-import org.example.comprova.dto.UserLoginDTO;
-import org.example.comprova.dto.UserRegisterDTO;
-import org.example.comprova.dto.UserResponseDTO;
+import org.example.comprova.dto.*;
+import org.example.comprova.enums.UserRole;
 import org.example.comprova.exceptions.BusinessException;
+import org.example.comprova.model.Candidate;
+import org.example.comprova.model.Company;
 import org.example.comprova.model.User;
 import org.example.comprova.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -21,7 +21,24 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
 
-    public void signUp(UserRegisterDTO userRegisterDTO) {
+    public void signUpCandidate(CandidateRegisterDTO candidateRegisterDTO) {
+        Optional<User> userWithSameEmail = userRepository.getUserByEmail(candidateRegisterDTO.email());
+        Optional<User> userWithSameUsername = userRepository.getUserByUsername(candidateRegisterDTO.username());
+
+        if (userWithSameEmail.isPresent()) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
+        }
+
+        if (userWithSameUsername.isPresent()) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
+        }
+
+        String encodedPassword = passwordEncoder.encode(candidateRegisterDTO.password());
+
+        userRepository.save(new Candidate(candidateRegisterDTO.username(), candidateRegisterDTO.email(), encodedPassword, candidateRegisterDTO.cpf()));
+    }
+
+    public void signUpCompany(UserRegisterDTO userRegisterDTO) {
         Optional<User> userWithSameEmail = userRepository.getUserByEmail(userRegisterDTO.email());
         Optional<User> userWithSameUsername = userRepository.getUserByUsername(userRegisterDTO.username());
 
@@ -34,7 +51,7 @@ public class AuthService {
         }
 
         String encodedPassword = passwordEncoder.encode(userRegisterDTO.password());
-        User userToRegister = new User(userRegisterDTO.username(), userRegisterDTO.email(), encodedPassword);
+        User userToRegister = new Company(userRegisterDTO.username(), userRegisterDTO.email(), encodedPassword, "Jorge");
 
         userRepository.save(userToRegister);
     }
@@ -49,10 +66,9 @@ public class AuthService {
         return new TokenDTO(jwtService.generateAccessToken(user.getUsername()));
     }
 
-    public UserResponseDTO me(String token) {
-        String username = jwtService.extractAllClaims(token).getSubject();
+    public UserResponseDTO me(String username) {
         User user = userRepository.getUserByUsername(username).orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found"));
 
-        return new UserResponseDTO(user.getUsername(), user.getEmail());
+        return new UserResponseDTO(user.getUsername(), user.getEmail(), user.getRole());
     }
 }

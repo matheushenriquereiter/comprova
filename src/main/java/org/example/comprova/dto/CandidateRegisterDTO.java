@@ -1,16 +1,19 @@
 package org.example.comprova.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
-public record UserResponseDTO(
+public record CandidateRegisterDTO (
         @NotBlank(message = "Username cannot be null or empty")
         String username,
 
         @NotBlank(message = "User email cannot be null or empty")
         String email,
 
-        @NotNull
-        String role
+        @NotBlank(message = "User password cannot be null or empty")
+        String password,
+
+        @NotBlank(message = "User cpf cannot be null or empty")
+        String cpf
 ) {
 }
+
