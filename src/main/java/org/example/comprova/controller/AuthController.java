@@ -4,8 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.comprova.dto.*;
 import org.example.comprova.service.AuthService;
-import org.example.comprova.service.JwtService;
-import org.example.comprova.util.BearerTokenUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +15,6 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
-    private final JwtService jwtService;
 
     @PostMapping("/sign-up/candidate")
     public ResponseEntity<Void> signUpCandidate(@Valid @RequestBody CandidateRegisterDTO candidateRegisterDTO) {
@@ -27,8 +24,8 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up/company")
-    public ResponseEntity<Void> signUpCompany(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
-        authService.signUpCompany(userRegisterDTO);
+    public ResponseEntity<Void> signUpCompany(@Valid @RequestBody CompanyRegisterDTO companyRegisterDTO) {
+        authService.signUpCompany(companyRegisterDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

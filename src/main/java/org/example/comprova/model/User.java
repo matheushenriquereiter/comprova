@@ -1,7 +1,6 @@
 package org.example.comprova.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -25,18 +24,15 @@ public abstract class User implements UserDetails {
     @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_seq", allocationSize = 1)
     private Long id;
 
-    @NotBlank(message = "User username cannot be null or empty")
     @Column(nullable = false, unique = true)
     private String username;
 
-    @NotBlank(message = "User email cannot be null or empty")
     @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
     private String role;
 
-    @NotBlank(message = "User password cannot be null or empty")
     @Column(nullable = false)
     private String password;
 

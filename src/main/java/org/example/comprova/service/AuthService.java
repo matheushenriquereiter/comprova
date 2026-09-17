@@ -37,9 +37,9 @@ public class AuthService {
         userRepository.save(new Candidate(candidateRegisterDTO.username(), candidateRegisterDTO.email(), encodedPassword, candidateRegisterDTO.cpf()));
     }
 
-    public void signUpCompany(UserRegisterDTO userRegisterDTO) {
-        Optional<User> userWithSameEmail = userRepository.getUserByEmail(userRegisterDTO.email());
-        Optional<User> userWithSameUsername = userRepository.getUserByUsername(userRegisterDTO.username());
+    public void signUpCompany(CompanyRegisterDTO companyRegisterDTO) {
+        Optional<User> userWithSameEmail = userRepository.getUserByEmail(companyRegisterDTO.email());
+        Optional<User> userWithSameUsername = userRepository.getUserByUsername(companyRegisterDTO.username());
 
         if (userWithSameEmail.isPresent()) {
             throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
@@ -49,8 +49,8 @@ public class AuthService {
             throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
         }
 
-        String encodedPassword = passwordEncoder.encode(userRegisterDTO.password());
-        User userToRegister = new Company(userRegisterDTO.username(), userRegisterDTO.email(), encodedPassword, "Jorge");
+        String encodedPassword = passwordEncoder.encode(companyRegisterDTO.password());
+        User userToRegister = new Company(companyRegisterDTO.username(), companyRegisterDTO.email(), encodedPassword, companyRegisterDTO.legalName());
 
         userRepository.save(userToRegister);
     }
@@ -62,7 +62,7 @@ public class AuthService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid credentials");
         }
 
-        return new TokenDTO(jwtService.generateToken(user.getUsername(), user.getAuthorities()));
+        return new TokenDTO(jwtService.generateToken(user.getUsername()));
     }
 
     public UserResponseDTO me(String username) {
