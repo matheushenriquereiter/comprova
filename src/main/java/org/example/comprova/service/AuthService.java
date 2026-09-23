@@ -50,7 +50,15 @@ public class AuthService {
         }
 
         String encodedPassword = passwordEncoder.encode(companyRegisterDTO.password());
-        User userToRegister = new Company(companyRegisterDTO.username(), companyRegisterDTO.email(), encodedPassword, companyRegisterDTO.legalName());
+        User userToRegister = new Company(
+                companyRegisterDTO.username(),
+                companyRegisterDTO.email(),
+                encodedPassword,
+                companyRegisterDTO.legalName(),
+                companyRegisterDTO.tradeName(),
+                companyRegisterDTO.phone(),
+                companyRegisterDTO.cnpj()
+        );
 
         userRepository.save(userToRegister);
     }

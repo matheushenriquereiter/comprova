@@ -10,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "job_postings")
@@ -29,7 +30,8 @@ public class JobPosting {
     @Column(nullable = false)
     private JobPostingStatus status = JobPostingStatus.DRAFT;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     @CreationTimestamp
@@ -43,6 +45,12 @@ public class JobPosting {
     @Column(name = "expires_at")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime expiresAt;
+
+    @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<JobPostingSkill> skills;
+
+    @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<JobPostingCandidate> candidates;
 
     public JobPosting(String title, Company company, LocalDateTime expiresAt) {
         this.title = title;

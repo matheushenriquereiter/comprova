@@ -13,7 +13,10 @@ http:
         "username": "matheus",
         "email": "mathenriquereiter@gmail.com",
         "password": "matheus123",
-        "legalName": "jorge"
+        "legalName": "Jorge LTDA",
+        "tradeName": "Jorge Company",
+        "phone": "47999999999",
+        "cnpj": "12345678000199"
       }
   auth: inherit
 

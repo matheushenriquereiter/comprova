@@ -15,6 +15,22 @@ http:
       }
   auth: inherit
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const data = res.getBody();
+
+        const token = data.token || data.accessToken || data.access_token;
+
+        if (token) {
+          // Salva o token em uma variável de ambiente chamada "bearer_token"
+          bru.setEnvVar("bearer_token", token);
+          console.log("Token capturado com sucesso!");
+        } else {
+          console.log("Token não encontrado na resposta da API.");
+        }
+
 settings:
   encodeUrl: true
   timeout: 0
