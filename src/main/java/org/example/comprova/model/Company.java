@@ -25,7 +25,7 @@ public class Company extends User {
     @Column(nullable = false)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String cnpj;
 
     @OneToMany(mappedBy = "company")

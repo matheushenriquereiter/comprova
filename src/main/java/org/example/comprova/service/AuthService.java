@@ -6,7 +6,9 @@ import org.example.comprova.exceptions.BusinessException;
 import org.example.comprova.model.Candidate;
 import org.example.comprova.model.Company;
 import org.example.comprova.model.User;
+import org.example.comprova.repository.CompanyRepository;
 import org.example.comprova.repository.UserRepository;
+import org.example.comprova.util.CnpjUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final JwtService jwtService;
 
     public void signUpCandidate(CandidateRegisterDTO candidateRegisterDTO) {
@@ -38,19 +41,22 @@ public class AuthService {
     }
 
     public void signUpCompany(CompanyRegisterDTO companyRegisterDTO) {
-        Optional<User> userWithSameEmail = userRepository.getUserByEmail(companyRegisterDTO.email());
-        Optional<User> userWithSameUsername = userRepository.getUserByUsername(companyRegisterDTO.username());
+        if (!CnpjUtil.isValid(companyRegisterDTO.cnpj())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid CNPJ");
+        }
 
-        if (userWithSameEmail.isPresent()) {
+        userRepository.getUserByEmail(companyRegisterDTO.email()).ifPresent(user -> {
             throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
-        }
-
-        if (userWithSameUsername.isPresent()) {
+        });
+        userRepository.getUserByUsername(companyRegisterDTO.username()).ifPresent(user -> {
             throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
-        }
+        });
+        companyRepository.findByCnpj(companyRegisterDTO.cnpj()).ifPresent(company -> {
+            throw new BusinessException(HttpStatus.CONFLICT, "CNPJ already taken");
+        });
 
         String encodedPassword = passwordEncoder.encode(companyRegisterDTO.password());
-        User userToRegister = new Company(
+        Company companyToRegister = new Company(
                 companyRegisterDTO.username(),
                 companyRegisterDTO.email(),
                 encodedPassword,
@@ -60,7 +66,7 @@ public class AuthService {
                 companyRegisterDTO.cnpj()
         );
 
-        userRepository.save(userToRegister);
+        userRepository.save(companyToRegister);
     }
 
     public TokenDTO signIn(UserLoginDTO userLoginDTO) {
