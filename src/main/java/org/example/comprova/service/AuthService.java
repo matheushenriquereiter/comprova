@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -24,16 +22,12 @@ public class AuthService {
     private final JwtService jwtService;
 
     public void signUpCandidate(CandidateRegisterDTO candidateRegisterDTO) {
-        Optional<User> userWithSameEmail = userRepository.getUserByEmail(candidateRegisterDTO.email());
-        Optional<User> userWithSameUsername = userRepository.getUserByUsername(candidateRegisterDTO.username());
-
-        if (userWithSameEmail.isPresent()) {
+        userRepository.getUserByEmail(candidateRegisterDTO.email()).ifPresent(user -> {
             throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
-        }
-
-        if (userWithSameUsername.isPresent()) {
+        });
+        userRepository.getUserByUsername(candidateRegisterDTO.username()).ifPresent(user -> {
             throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
-        }
+        });
 
         String encodedPassword = passwordEncoder.encode(candidateRegisterDTO.password());
 
