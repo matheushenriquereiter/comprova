@@ -6,12 +6,12 @@ import org.example.comprova.dto.CreateJobPostingDTO;
 import org.example.comprova.dto.JobPostingResponseDTO;
 import org.example.comprova.model.Company;
 import org.example.comprova.service.JobPostingService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/job-postings")
@@ -27,8 +27,8 @@ public class JobPostingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobPostingResponseDTO>> getJobPostings(@AuthenticationPrincipal Company company) {
-        List<JobPostingResponseDTO> jobPostings = jobPostingService.getJobPostings(company);
+    public ResponseEntity<Page<JobPostingResponseDTO>> getJobPostings(@AuthenticationPrincipal Company company, Pageable pageable) {
+        Page<JobPostingResponseDTO> jobPostings = jobPostingService.getJobPostings(company, pageable);
 
         return ResponseEntity.ok(jobPostings);
     }

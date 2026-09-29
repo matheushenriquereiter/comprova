@@ -8,7 +8,6 @@ import org.example.comprova.model.Company;
 import org.example.comprova.model.User;
 import org.example.comprova.repository.CompanyRepository;
 import org.example.comprova.repository.UserRepository;
-import org.example.comprova.util.CnpjUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,10 +34,6 @@ public class AuthService {
     }
 
     public void signUpCompany(CompanyRegisterDTO companyRegisterDTO) {
-        if (!CnpjUtil.isValid(companyRegisterDTO.cnpj())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid CNPJ");
-        }
-
         userRepository.getUserByEmail(companyRegisterDTO.email()).ifPresent(user -> {
             throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
         });

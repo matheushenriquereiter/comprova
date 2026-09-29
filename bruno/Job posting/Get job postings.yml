@@ -5,7 +5,14 @@ info:
 
 http:
   method: GET
-  url: "{{url}}/job-postings"
+  url: "{{url}}/job-postings?size=1&page=0"
+  params:
+    - name: size
+      value: "1"
+      type: query
+    - name: page
+      value: "0"
+      type: query
   auth: inherit
 
 settings:
