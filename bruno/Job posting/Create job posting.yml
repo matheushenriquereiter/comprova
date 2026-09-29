@@ -11,6 +11,10 @@ http:
     data: |-
       {
         "title": "Desenvolvedor Web",
+        "description": "Estamos procurando um desenvolvedor web full-stack, com experiência em Java e Spring Boot para um projeto promissor e inovador.",
+        "workplaceType": "REMOTE",
+        "employmentType": "FULL_TIME",
+        "location": "São Paulo, SP (Remoto)",
         "expiresAt": "2026-12-01T10:15:30"
       }
   auth: inherit

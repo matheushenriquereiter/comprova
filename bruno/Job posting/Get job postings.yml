@@ -5,10 +5,10 @@ info:
 
 http:
   method: GET
-  url: "{{url}}/job-postings?size=1&page=0"
+  url: "{{url}}/job-postings?size=5&page=0"
   params:
     - name: size
-      value: "1"
+      value: "5"
       type: query
     - name: page
       value: "0"

@@ -35,7 +35,15 @@ public class JobPostingService {
     }
 
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
-        JobPosting jobPosting = new JobPosting(createJobPostingDTO.title(), company, createJobPostingDTO.expiresAt());
+        JobPosting jobPosting = new JobPosting(
+                createJobPostingDTO.title(),
+                createJobPostingDTO.description(),
+                createJobPostingDTO.workplaceType(),
+                createJobPostingDTO.employmentType(),
+                createJobPostingDTO.location(),
+                company,
+                createJobPostingDTO.expiresAt()
+        );
 
         jobPostingRepository.save(jobPosting);
     }

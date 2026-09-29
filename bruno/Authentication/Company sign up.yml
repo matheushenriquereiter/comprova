@@ -16,7 +16,7 @@ http:
         "legalName": "Jorge LTDA",
         "tradeName": "Jorge Company",
         "phone": "47999999999",
-        "cnpj": "14.121.957/0001-09"
+        "cnpj": "14121957000109"
       }
   auth: inherit
 
