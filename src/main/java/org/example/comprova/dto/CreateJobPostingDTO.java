@@ -10,6 +10,7 @@ import org.example.comprova.enums.EmploymentType;
 import org.example.comprova.enums.WorkplaceType;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record CreateJobPostingDTO(
         @NotBlank(message = "Job title cannot be null or empty")
@@ -31,6 +32,8 @@ public record CreateJobPostingDTO(
         @NotBlank(message = "Location cannot be null or empty")
         @Size(min = 2, max = 100, message = "Location must be between 2 and 100 characters")
         String location,
+
+        List<JobPostingSkillDTO> skills,
 
         @NotNull(message = "Expiration date cannot be null")
         @Future(message = "Expiration date must be in the future")

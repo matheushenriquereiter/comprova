@@ -25,4 +25,10 @@ public class JobPostingSkill {
 
     @Column(nullable = false)
     private Integer weight;
+
+    public JobPostingSkill(JobPosting jobPosting, Skill skill, Integer weight) {
+        this.jobPosting = jobPosting;
+        this.skill = skill;
+        this.weight = weight;
+    }
 }

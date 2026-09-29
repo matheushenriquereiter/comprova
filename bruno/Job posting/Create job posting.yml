@@ -15,7 +15,21 @@ http:
         "workplaceType": "REMOTE",
         "employmentType": "FULL_TIME",
         "location": "São Paulo, SP (Remoto)",
-        "expiresAt": "2026-12-01T10:15:30"
+        "expiresAt": "2026-12-01T10:15:30",
+        "skills": [
+          {
+            "name": "Java",
+            "weight": 5
+          },
+          {
+            "name": "Spring Boot",
+            "weight": 4
+          },
+          {
+            "name": "React",
+            "weight": 3
+          }
+        ]
       }
   auth: inherit
 

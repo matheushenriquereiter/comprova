@@ -7,15 +7,23 @@ import org.example.comprova.dto.JobPostingResponseDTO;
 import org.example.comprova.dto.SkillDTO;
 import org.example.comprova.model.Company;
 import org.example.comprova.model.JobPosting;
+import org.example.comprova.model.JobPostingSkill;
+import org.example.comprova.model.Skill;
 import org.example.comprova.repository.JobPostingRepository;
+import org.example.comprova.repository.JobPostingSkillRepository;
+import org.example.comprova.repository.SkillRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class JobPostingService {
     private final JobPostingRepository jobPostingRepository;
+    private final SkillRepository skillRepository;
+    private final JobPostingSkillRepository jobPostingSkillRepository;
 
     private static JobPostingResponseDTO mapJobPosting(JobPosting jobPosting) {
         return new JobPostingResponseDTO(
@@ -46,6 +54,16 @@ public class JobPostingService {
         );
 
         jobPostingRepository.save(jobPosting);
+
+        List<JobPostingSkill> jobPostingSkills = createJobPostingDTO.skills().stream()
+                .map(jobPostingSkillDTO -> {
+                    Skill skill = skillRepository.findByNameIgnoreCase(jobPostingSkillDTO.name())
+                            .orElse(skillRepository.save(new Skill(jobPostingSkillDTO.name())));
+
+                    return jobPostingSkillRepository.save(new JobPostingSkill(jobPosting, skill, jobPostingSkillDTO.weight()));
+                }).toList();
+
+        jobPostingSkills.forEach(jobPosting::addSkill);
     }
 
     public Page<JobPostingResponseDTO> getJobPostings(Company company, Pageable pageable) {
@@ -53,5 +71,4 @@ public class JobPostingService {
                 .findAllByCompany(company, pageable)
                 .map(JobPostingService::mapJobPosting);
     }
-
 }
