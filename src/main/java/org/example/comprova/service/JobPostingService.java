@@ -62,7 +62,7 @@ public class JobPostingService {
 
     public Page<JobPostingResponseDTO> getJobPostings(Company company, Pageable pageable) {
         return jobPostingRepository
-                .findAllByCompany(company, pageable)
+                .findAllByCompanyOrderByCreatedAtDesc(company, pageable)
                 .map(JobPostingService::mapJobPostingToResponseDTO);
     }
 

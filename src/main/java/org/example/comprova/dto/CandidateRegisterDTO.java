@@ -2,7 +2,6 @@ package org.example.comprova.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 
@@ -21,7 +20,6 @@ public record CandidateRegisterDTO(
 
         @NotBlank(message = "User cpf cannot be null or empty.")
         @CPF(message = "Invalid CPF number.")
-        @Pattern(regexp = "\\d{11}", message = "CPF must contain exactly 11 numeric digits.")
         String cpf
 ) {
 }

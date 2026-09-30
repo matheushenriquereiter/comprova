@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/job-postings")
+@RequestMapping("/company/job-postings")
 @RequiredArgsConstructor
 public class JobPostingController {
     private final JobPostingService jobPostingService;

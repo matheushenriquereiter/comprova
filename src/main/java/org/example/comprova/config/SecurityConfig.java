@@ -42,8 +42,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/ws", "/chat/**", "/auth/**", "/css/**", "/js/**").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/ws", "/auth/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/company/job-postings/**").hasRole("COMPANY")
+                        .anyRequest().denyAll())
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))

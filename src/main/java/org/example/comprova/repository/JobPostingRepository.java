@@ -10,5 +10,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
-    Page<JobPosting> findAllByCompany(Company company, Pageable pageable);
+    Page<JobPosting> findAllByCompanyOrderByCreatedAtDesc(Company company, Pageable pageable);
 }

@@ -13,7 +13,7 @@ http:
         "username": "matheus",
         "email": "mathenriquereiter@gmail.com",
         "password": "matheus123",
-        "cpf": "141.141.141-28"
+        "cpf": "14172514928"
       }
   auth: inherit
 
