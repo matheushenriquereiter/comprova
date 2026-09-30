@@ -39,6 +39,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUncaughtException(Exception exception) {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), exception.getMessage());
 
-        return ResponseEntity.badRequest().body(errorResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

@@ -78,8 +78,4 @@ public class JobPosting {
         this.company = company;
         this.expiresAt = expiresAt;
     }
-
-    public void addSkill(JobPostingSkill jobPostingSkill) {
-        this.skills.add(jobPostingSkill);
-    }
 }

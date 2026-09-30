@@ -21,12 +21,11 @@ public class AuthService {
     private final JwtService jwtService;
 
     public void signUpCandidate(CandidateRegisterDTO candidateRegisterDTO) {
-        userRepository.getUserByEmail(candidateRegisterDTO.email()).ifPresent(user -> {
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
-        });
-        userRepository.getUserByUsername(candidateRegisterDTO.username()).ifPresent(user -> {
+        if (userRepository.existsByUsername(candidateRegisterDTO.username()))
             throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
-        });
+
+        if (userRepository.existsByEmail(candidateRegisterDTO.email()))
+            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
 
         String encodedPassword = passwordEncoder.encode(candidateRegisterDTO.password());
 
@@ -34,15 +33,15 @@ public class AuthService {
     }
 
     public void signUpCompany(CompanyRegisterDTO companyRegisterDTO) {
-        userRepository.getUserByEmail(companyRegisterDTO.email()).ifPresent(user -> {
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
-        });
-        userRepository.getUserByUsername(companyRegisterDTO.username()).ifPresent(user -> {
+        if (userRepository.existsByUsername(companyRegisterDTO.username()))
             throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
-        });
-        companyRepository.findByCnpj(companyRegisterDTO.cnpj()).ifPresent(company -> {
+
+        if (userRepository.existsByEmail(companyRegisterDTO.email()))
+            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
+
+        if (companyRepository.existsByCnpj(companyRegisterDTO.cnpj())) {
             throw new BusinessException(HttpStatus.CONFLICT, "CNPJ already taken");
-        });
+        }
 
         String encodedPassword = passwordEncoder.encode(companyRegisterDTO.password());
         Company companyToRegister = new Company(

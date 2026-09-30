@@ -4,11 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.comprova.dto.CandidateResponseDTO;
 import org.example.comprova.dto.CreateJobPostingDTO;
 import org.example.comprova.dto.JobPostingResponseDTO;
-import org.example.comprova.dto.SkillDTO;
-import org.example.comprova.model.Company;
-import org.example.comprova.model.JobPosting;
-import org.example.comprova.model.JobPostingSkill;
-import org.example.comprova.model.Skill;
+import org.example.comprova.dto.JobPostingSkillDTO;
+import org.example.comprova.model.*;
 import org.example.comprova.repository.JobPostingRepository;
 import org.example.comprova.repository.JobPostingSkillRepository;
 import org.example.comprova.repository.SkillRepository;
@@ -25,23 +22,6 @@ public class JobPostingService {
     private final SkillRepository skillRepository;
     private final JobPostingSkillRepository jobPostingSkillRepository;
 
-    private static JobPostingResponseDTO mapJobPosting(JobPosting jobPosting) {
-        return new JobPostingResponseDTO(
-                jobPosting.getTitle(),
-                jobPosting.getStatus(),
-                jobPosting.getExpiresAt(),
-                jobPosting.getCandidates().stream()
-                        .map(candidate -> new CandidateResponseDTO(
-                                candidate.getCandidate().getUsername(),
-                                candidate.getCandidate().getEmail()))
-                        .toList(),
-                jobPosting.getSkills().stream()
-                        .map(jobPostingSkill -> new SkillDTO(
-                                jobPostingSkill.getSkill().getName()))
-                        .toList()
-        );
-    }
-
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
         JobPosting jobPosting = new JobPosting(
                 createJobPostingDTO.title(),
@@ -55,20 +35,54 @@ public class JobPostingService {
 
         jobPostingRepository.save(jobPosting);
 
-        List<JobPostingSkill> jobPostingSkills = createJobPostingDTO.skills().stream()
+        List<JobPostingSkill> jobPostingSkills = createJobPostingDTO.skills()
+                .stream()
                 .map(jobPostingSkillDTO -> {
                     Skill skill = skillRepository.findByNameIgnoreCase(jobPostingSkillDTO.name())
-                            .orElse(skillRepository.save(new Skill(jobPostingSkillDTO.name())));
+                            .orElseGet(() -> skillRepository.save(new Skill(jobPostingSkillDTO.name())));
 
-                    return jobPostingSkillRepository.save(new JobPostingSkill(jobPosting, skill, jobPostingSkillDTO.weight()));
-                }).toList();
+                    return new JobPostingSkill(jobPosting, skill, jobPostingSkillDTO.weight());
+                })
+                .toList();
 
-        jobPostingSkills.forEach(jobPosting::addSkill);
+        jobPostingSkillRepository.saveAll(jobPostingSkills);
     }
 
     public Page<JobPostingResponseDTO> getJobPostings(Company company, Pageable pageable) {
         return jobPostingRepository
                 .findAllByCompany(company, pageable)
-                .map(JobPostingService::mapJobPosting);
+                .map(JobPostingService::mapJobPostingToResponseDTO);
+    }
+
+    private static JobPostingResponseDTO mapJobPostingToResponseDTO(JobPosting jobPosting) {
+        return new JobPostingResponseDTO(
+                jobPosting.getId(),
+                jobPosting.getTitle(),
+                jobPosting.getStatus(),
+                jobPosting.getExpiresAt(),
+
+                jobPosting.getCandidates()
+                        .stream()
+                        .map(JobPostingService::mapJobPostingCandidateToResponseDTO)
+                        .toList(),
+
+                jobPosting.getSkills().stream()
+                        .map(JobPostingService::mapJobPostingSkillToResponseDTO)
+                        .toList()
+        );
+    }
+
+    private static JobPostingSkillDTO mapJobPostingSkillToResponseDTO(JobPostingSkill jobPostingSkill) {
+        return new JobPostingSkillDTO(
+                jobPostingSkill.getSkill().getName(),
+                jobPostingSkill.getWeight()
+        );
+    }
+
+    private static CandidateResponseDTO mapJobPostingCandidateToResponseDTO(JobPostingCandidate jobPostingCandidate) {
+        return new CandidateResponseDTO(
+                jobPostingCandidate.getCandidate().getUsername(),
+                jobPostingCandidate.getCandidate().getEmail()
+        );
     }
 }
