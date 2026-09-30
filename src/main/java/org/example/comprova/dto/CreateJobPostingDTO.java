@@ -13,30 +13,30 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record CreateJobPostingDTO(
-        @NotBlank(message = "Job title cannot be null or empty")
-        @Size(min = 5, max = 100, message = "Job title must be between 5 and 100 characters")
+        @NotBlank(message = "Job title cannot be null or empty.")
+        @Size(min = 5, max = 100, message = "Job title must be between 5 and 100 characters.")
         String title,
 
-        @NotBlank(message = "Job description cannot be null or empty")
-        @Size(min = 10, max = 5000, message = "Job description must be between 10 and 5000 characters")
+        @NotBlank(message = "Job description cannot be null or empty.")
+        @Size(min = 10, max = 5000, message = "Job description must be between 10 and 5000 characters.")
         String description,
 
-        @NotNull(message = "Workplace type cannot be null")
+        @NotNull(message = "Workplace type cannot be null.")
         @Enumerated(EnumType.STRING)
         WorkplaceType workplaceType,
 
-        @NotNull(message = "Employment type cannot be null")
+        @NotNull(message = "Employment type cannot be null.")
         @Enumerated(EnumType.STRING)
         EmploymentType employmentType,
 
-        @NotBlank(message = "Location cannot be null or empty")
-        @Size(min = 2, max = 100, message = "Location must be between 2 and 100 characters")
+        @NotBlank(message = "Location cannot be null or empty.")
+        @Size(min = 2, max = 100, message = "Location must be between 2 and 100 characters.")
         String location,
 
         List<JobPostingSkillDTO> skills,
 
-        @NotNull(message = "Expiration date cannot be null")
-        @Future(message = "Expiration date must be in the future")
+        @NotNull(message = "Expiration date cannot be null.")
+        @Future(message = "Expiration date must be in the future.")
         LocalDateTime expiresAt
 ) {
 }

@@ -22,10 +22,10 @@ public class AuthService {
 
     public void signUpCandidate(CandidateRegisterDTO candidateRegisterDTO) {
         if (userRepository.existsByUsername(candidateRegisterDTO.username()))
-            throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
+            throw new BusinessException(HttpStatus.CONFLICT, "Username is already in use.");
 
         if (userRepository.existsByEmail(candidateRegisterDTO.email()))
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
+            throw new BusinessException(HttpStatus.CONFLICT, "Email address is already in use.");
 
         String encodedPassword = passwordEncoder.encode(candidateRegisterDTO.password());
 
@@ -34,13 +34,13 @@ public class AuthService {
 
     public void signUpCompany(CompanyRegisterDTO companyRegisterDTO) {
         if (userRepository.existsByUsername(companyRegisterDTO.username()))
-            throw new BusinessException(HttpStatus.CONFLICT, "Username already taken");
+            throw new BusinessException(HttpStatus.CONFLICT, "Username is already in use.");
 
         if (userRepository.existsByEmail(companyRegisterDTO.email()))
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already taken");
+            throw new BusinessException(HttpStatus.CONFLICT, "Email address is already in use.");
 
         if (companyRepository.existsByCnpj(companyRegisterDTO.cnpj())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "CNPJ already taken");
+            throw new BusinessException(HttpStatus.CONFLICT, "CNPJ is already in use.");
         }
 
         String encodedPassword = passwordEncoder.encode(companyRegisterDTO.password());
@@ -58,17 +58,19 @@ public class AuthService {
     }
 
     public TokenDTO signIn(UserLoginDTO userLoginDTO) {
-        User user = userRepository.getUserByEmail(userLoginDTO.email()).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Invalid credentials"));
+        User user = userRepository.getUserByEmail(userLoginDTO.email())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Invalid email or password."));
 
         if (!passwordEncoder.matches(userLoginDTO.password(), user.getPassword())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid credentials");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid email or password.");
         }
 
         return new TokenDTO(jwtService.generateToken(user.getUsername()));
     }
 
     public UserResponseDTO me(String username) {
-        User user = userRepository.getUserByUsername(username).orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = userRepository.getUserByUsername(username)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found."));
 
         return new UserResponseDTO(user.getUsername(), user.getEmail(), user.getRole());
     }

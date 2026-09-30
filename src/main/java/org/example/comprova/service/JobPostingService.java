@@ -53,7 +53,7 @@ public class JobPostingService {
         if (weightSum != 100) {
             throw new BusinessException(
                     HttpStatus.BAD_REQUEST,
-                    String.format("The sum of skill weights must be exactly 100, but was %d", weightSum)
+                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
             );
         }
 
