@@ -5,12 +5,14 @@ import org.example.comprova.dto.CandidateResponseDTO;
 import org.example.comprova.dto.CreateJobPostingDTO;
 import org.example.comprova.dto.JobPostingResponseDTO;
 import org.example.comprova.dto.JobPostingSkillDTO;
+import org.example.comprova.exceptions.BusinessException;
 import org.example.comprova.model.*;
 import org.example.comprova.repository.JobPostingRepository;
 import org.example.comprova.repository.JobPostingSkillRepository;
 import org.example.comprova.repository.SkillRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,6 +46,16 @@ public class JobPostingService {
                     return new JobPostingSkill(jobPosting, skill, jobPostingSkillDTO.weight());
                 })
                 .toList();
+
+        Integer weightSum = jobPostingSkills.stream()
+                .reduce(0, (accumulator, jobPostingSkill) -> accumulator + jobPostingSkill.getWeight(), Integer::sum);
+
+        if (weightSum != 100) {
+            throw new BusinessException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("The sum of skill weights must be exactly 100, but was %d", weightSum)
+            );
+        }
 
         jobPostingSkillRepository.saveAll(jobPostingSkills);
     }
