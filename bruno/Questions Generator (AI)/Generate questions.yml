@@ -5,12 +5,12 @@ info:
 
 http:
   method: GET
-  url: "{{url}}/gerar-codigo"
+  url: "{{url}}/generate-question"
   body:
     type: json
     data: |-
       {
-        "prompt": "O que é uma lista em Java?"
+        "prompt": "Gere 10 perguntas sobre programação Java. Alterne conceitos e o jeito de responder. Peça para o candidato escrever um trecho de código."
       }
   auth: inherit
 
