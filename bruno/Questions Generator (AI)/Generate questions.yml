@@ -4,13 +4,13 @@ info:
   seq: 1
 
 http:
-  method: GET
+  method: POST
   url: "{{url}}/generate-question"
   body:
     type: json
     data: |-
       {
-        "prompt": "Gere 10 perguntas sobre programação Java. Alterne conceitos e o jeito de responder. Peça para o candidato escrever um trecho de código."
+        "prompt": "Gere 5 perguntas sobre Programação Orientada a Objetos em Java."
       }
   auth: inherit
 
