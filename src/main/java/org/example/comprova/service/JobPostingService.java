@@ -1,19 +1,18 @@
 package org.example.comprova.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.comprova.dto.CandidateResponseDTO;
-import org.example.comprova.dto.CreateJobPostingDTO;
-import org.example.comprova.dto.JobPostingResponseDTO;
-import org.example.comprova.dto.JobPostingSkillDTO;
+import org.example.comprova.dto.*;
 import org.example.comprova.exceptions.BusinessException;
 import org.example.comprova.model.*;
+import org.example.comprova.repository.JobApplicationRepository;
 import org.example.comprova.repository.JobPostingRepository;
-import org.example.comprova.repository.JobPostingSkillRepository;
+import org.example.comprova.repository.JobSkillRequirementRepository;
 import org.example.comprova.repository.SkillRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,8 +21,10 @@ import java.util.List;
 public class JobPostingService {
     private final JobPostingRepository jobPostingRepository;
     private final SkillRepository skillRepository;
-    private final JobPostingSkillRepository jobPostingSkillRepository;
+    private final JobSkillRequirementRepository jobSkillRequirementRepository;
+    private final JobApplicationRepository jobApplicationRepository;
 
+    @Transactional
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
         JobPosting jobPosting = new JobPosting(
                 createJobPostingDTO.title(),
@@ -37,18 +38,18 @@ public class JobPostingService {
 
         jobPostingRepository.save(jobPosting);
 
-        List<JobPostingSkill> jobPostingSkills = createJobPostingDTO.skills()
+        List<JobSkillRequirement> jobSkillRequirements = createJobPostingDTO.skills()
                 .stream()
-                .map(jobPostingSkillDTO -> {
-                    Skill skill = skillRepository.findByNameIgnoreCase(jobPostingSkillDTO.name())
-                            .orElseGet(() -> skillRepository.save(new Skill(jobPostingSkillDTO.name())));
+                .map(jobSkillRequirementDTO -> {
+                    Skill skill = skillRepository.findByNameIgnoreCase(jobSkillRequirementDTO.name())
+                            .orElseGet(() -> skillRepository.save(new Skill(jobSkillRequirementDTO.name())));
 
-                    return new JobPostingSkill(jobPosting, skill, jobPostingSkillDTO.weight());
+                    return new JobSkillRequirement(jobPosting, skill, jobSkillRequirementDTO.weight());
                 })
                 .toList();
 
-        Integer weightSum = jobPostingSkills.stream()
-                .reduce(0, (accumulator, jobPostingSkill) -> accumulator + jobPostingSkill.getWeight(), Integer::sum);
+        Integer weightSum = jobSkillRequirements.stream()
+                .reduce(0, (accumulator, jobSkillRequirement) -> accumulator + jobSkillRequirement.getWeight(), Integer::sum);
 
         if (weightSum != 100) {
             throw new BusinessException(
@@ -57,14 +58,50 @@ public class JobPostingService {
             );
         }
 
-        jobPostingSkillRepository.saveAll(jobPostingSkills);
+        jobSkillRequirementRepository.saveAll(jobSkillRequirements);
     }
 
-    public Page<JobPostingResponseDTO> getJobPostings(Company company, Pageable pageable) {
+    @Transactional
+    public void applyToJobPosting(Candidate candidate, Long jobPostingId) {
+        JobPosting jobPosting = jobPostingRepository
+                .findById(jobPostingId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Job posting not found."));
+
+        if (jobApplicationRepository.existsByCandidateAndJobPosting(candidate, jobPosting)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Candidate already applied for this application.");
+        }
+
+        JobApplication jobApplication = new JobApplication(candidate, jobPosting);
+        jobPosting.addApplication(jobApplication);
+        jobApplicationRepository.save(jobApplication);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<JobPostingResponseDTO> getCompanyJobPostings(Company company, Pageable pageable) {
         return jobPostingRepository
                 .findAllByCompanyOrderByCreatedAtDesc(company, pageable)
                 .map(JobPostingService::mapJobPostingToResponseDTO);
     }
+
+    public Page<CandidateJobApplicationResponseDTO> getCandidateApplications(Candidate candidate, Pageable pageable) {
+        return jobPostingRepository
+                .findAllByJobApplications_CandidateOrderByCreatedAtDesc(candidate, pageable)
+                .map(JobPostingService::mapJobPostingToCandidateJobApplicationResponseDTO);
+    }
+
+    private static CandidateJobApplicationResponseDTO mapJobPostingToCandidateJobApplicationResponseDTO(JobPosting jobPosting) {
+        return new CandidateJobApplicationResponseDTO(
+                jobPosting.getId(),
+                jobPosting.getTitle(),
+                jobPosting.getStatus(),
+                jobPosting.getExpiresAt(),
+
+                jobPosting.getSkills().stream()
+                        .map(JobPostingService::mapJobPostingSkillToResponseDTO)
+                        .toList()
+        );
+    }
+
 
     private static JobPostingResponseDTO mapJobPostingToResponseDTO(JobPosting jobPosting) {
         return new JobPostingResponseDTO(
@@ -73,7 +110,7 @@ public class JobPostingService {
                 jobPosting.getStatus(),
                 jobPosting.getExpiresAt(),
 
-                jobPosting.getCandidates()
+                jobPosting.getJobApplications()
                         .stream()
                         .map(JobPostingService::mapJobPostingCandidateToResponseDTO)
                         .toList(),
@@ -84,17 +121,17 @@ public class JobPostingService {
         );
     }
 
-    private static JobPostingSkillDTO mapJobPostingSkillToResponseDTO(JobPostingSkill jobPostingSkill) {
-        return new JobPostingSkillDTO(
-                jobPostingSkill.getSkill().getName(),
-                jobPostingSkill.getWeight()
+    private static JobSkillRequirementDTO mapJobPostingSkillToResponseDTO(JobSkillRequirement jobSkillRequirement) {
+        return new JobSkillRequirementDTO(
+                jobSkillRequirement.getSkill().getName(),
+                jobSkillRequirement.getWeight()
         );
     }
 
-    private static CandidateResponseDTO mapJobPostingCandidateToResponseDTO(JobPostingCandidate jobPostingCandidate) {
+    private static CandidateResponseDTO mapJobPostingCandidateToResponseDTO(JobApplication jobApplication) {
         return new CandidateResponseDTO(
-                jobPostingCandidate.getCandidate().getUsername(),
-                jobPostingCandidate.getCandidate().getEmail()
+                jobApplication.getCandidate().getUsername(),
+                jobApplication.getCandidate().getEmail()
         );
     }
 }

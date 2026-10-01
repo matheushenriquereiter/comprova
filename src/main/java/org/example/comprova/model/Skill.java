@@ -21,7 +21,7 @@ public class Skill {
     private String name;
 
     @OneToMany(mappedBy = "skill")
-    private Set<JobPostingSkill> jobPostings;
+    private Set<JobSkillRequirement> jobPostings;
 
     public Skill(String name) {
         this.name = name;

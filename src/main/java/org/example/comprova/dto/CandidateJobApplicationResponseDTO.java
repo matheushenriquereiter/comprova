@@ -8,7 +8,7 @@ import org.example.comprova.enums.JobPostingStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record JobPostingResponseDTO(
+public record CandidateJobApplicationResponseDTO(
         @NotNull(message = "ID cannot be null.")
         Long id,
 
@@ -21,8 +21,6 @@ public record JobPostingResponseDTO(
 
         @NotNull(message = "Expiration date cannot be null.")
         LocalDateTime expiresAt,
-
-        List<CandidateResponseDTO> candidates,
 
         List<JobSkillRequirementDTO> skills
 ) {

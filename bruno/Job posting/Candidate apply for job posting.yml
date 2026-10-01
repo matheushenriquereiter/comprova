@@ -1,0 +1,16 @@
+info:
+  name: Candidate apply for job posting
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{url}}/candidate/job-postings/2/applications"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

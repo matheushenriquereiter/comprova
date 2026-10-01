@@ -10,16 +10,21 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class JobPostingCandidate {
+public class JobApplication {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "candidate_id", nullable = false)
+    private Candidate candidate;
+
+    @ManyToOne
     @JoinColumn(name = "job_posting_id", nullable = false)
     private JobPosting jobPosting;
 
-    @ManyToOne
-    @JoinColumn(name = "candidate_id", nullable = false)
-    private Candidate candidate;
+    public JobApplication(Candidate candidate, JobPosting jobPosting) {
+        this.candidate = candidate;
+        this.jobPosting = jobPosting;
+    }
 }

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -20,7 +21,7 @@ public class Candidate extends User {
     private String cpf;
 
     @OneToMany(mappedBy = "candidate")
-    private Set<JobPostingCandidate> jobPostings;
+    private Set<JobApplication> jobPostings = new HashSet<>();
 
     public Candidate(String username, String email, String password, String cpf) {
         super(username, email, password);

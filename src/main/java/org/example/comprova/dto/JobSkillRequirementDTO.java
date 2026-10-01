@@ -2,7 +2,7 @@ package org.example.comprova.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public record JobPostingSkillDTO(
+public record JobSkillRequirementDTO(
         @NotNull(message = "Skill name cannot be null.")
         String name,
 

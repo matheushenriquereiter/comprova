@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class JobPostingSkill {
+public class JobSkillRequirement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,7 +26,7 @@ public class JobPostingSkill {
     @Column(nullable = false)
     private Integer weight;
 
-    public JobPostingSkill(JobPosting jobPosting, Skill skill, Integer weight) {
+    public JobSkillRequirement(JobPosting jobPosting, Skill skill, Integer weight) {
         this.jobPosting = jobPosting;
         this.skill = skill;
         this.weight = weight;

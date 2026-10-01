@@ -8,8 +8,10 @@ import lombok.Setter;
 import org.example.comprova.enums.EmploymentType;
 import org.example.comprova.enums.JobPostingStatus;
 import org.example.comprova.enums.WorkplaceType;
+import org.example.comprova.exceptions.BusinessException;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -64,10 +66,10 @@ public class JobPosting {
     private LocalDateTime expiresAt;
 
     @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<JobPostingSkill> skills = new HashSet<>();
+    private Set<JobSkillRequirement> skills = new HashSet<>();
 
     @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<JobPostingCandidate> candidates = new HashSet<>();
+    private Set<JobApplication> jobApplications = new HashSet<>();
 
     public JobPosting(String title, String description, WorkplaceType workplaceType, EmploymentType employmentType, String location, Company company, LocalDateTime expiresAt) {
         this.title = title;
@@ -77,5 +79,14 @@ public class JobPosting {
         this.location = location;
         this.company = company;
         this.expiresAt = expiresAt;
+    }
+
+    public void addApplication(JobApplication jobApplication) {
+        if (jobApplication == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Job application cannot be null.");
+        }
+
+        jobApplication.setJobPosting(this);
+        this.jobApplications.add(jobApplication);
     }
 }

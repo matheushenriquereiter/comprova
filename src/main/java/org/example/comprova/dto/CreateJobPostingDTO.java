@@ -33,7 +33,7 @@ public record CreateJobPostingDTO(
         @Size(min = 2, max = 100, message = "Location must be between 2 and 100 characters.")
         String location,
 
-        List<JobPostingSkillDTO> skills,
+        List<JobSkillRequirementDTO> skills,
 
         @NotNull(message = "Expiration date cannot be null.")
         @Future(message = "Expiration date must be in the future.")

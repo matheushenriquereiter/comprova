@@ -43,7 +43,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/ws", "/auth/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/company/job-postings/**").hasRole("COMPANY")
+                        .requestMatchers("/company/**").hasRole("COMPANY")
+                        .requestMatchers("/candidate/**").hasRole("CANDIDATE")
                         .anyRequest().denyAll())
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
