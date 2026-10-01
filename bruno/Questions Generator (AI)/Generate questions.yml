@@ -1,0 +1,22 @@
+info:
+  name: Generate questions
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{url}}/gerar-codigo"
+  body:
+    type: json
+    data: |-
+      {
+        "prompt": "O que é uma lista em Java?"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
