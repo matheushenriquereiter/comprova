@@ -9,9 +9,16 @@ http:
   body:
     type: json
     data: |-
-      {
-        "prompt": "Gere 5 perguntas sobre Programação Orientada a Objetos em Java."
-      }
+      [
+        {
+          "name": "Java",
+          "weight": 20
+        },
+        {
+          "name": "Go",
+          "weight": 80
+        }
+      ]
   auth: inherit
 
 settings:
