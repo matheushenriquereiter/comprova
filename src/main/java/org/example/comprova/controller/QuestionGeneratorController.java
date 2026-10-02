@@ -23,7 +23,15 @@ public class QuestionGeneratorController {
     @PostMapping("/generate-question")
     public ResponseEntity<List<QuestionDTO>> generateQuestion(@Valid @RequestBody PromptDTO promptDTO) {
         List<QuestionDTO> questions = chatClient.prompt()
-                .user("Generate 5 Java programming questions. Return ONLY raw, valid JSON. Do not include markdown formatting or introductory text. In Brazilian Portuguese.")
+                .user(
+                        u -> u.text("""
+                        Generate 5 Java programming questions.
+                        Return ONLY raw, valid JSON. Do not include markdown formatting or introductory text.
+                        In Brazilian Portuguese.
+                        Specify question type as PRACTICAL or THEORETICAL.
+                        Difficult: {difficult}
+                      """).param("difficult", "Very Easy")
+                )
                 .call()
                 .entity(new ParameterizedTypeReference<>() {});
 
