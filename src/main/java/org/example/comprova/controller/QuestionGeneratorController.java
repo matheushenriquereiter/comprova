@@ -1,7 +1,7 @@
 package org.example.comprova.controller;
 
 import jakarta.validation.Valid;
-import org.example.comprova.dto.JobSkillRequirementDTO;
+import org.example.comprova.dto.QuestionGenerationRequestDTO;
 import org.example.comprova.dto.QuestionDTO;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.ParameterizedTypeReference;
@@ -22,22 +22,36 @@ public class QuestionGeneratorController {
     }
 
     @PostMapping("/generate-question")
-    public ResponseEntity<List<QuestionDTO>> generateQuestion(@Valid @RequestBody List<JobSkillRequirementDTO> jobSkillRequirements) {
-        String jobRequirements = jobSkillRequirements.stream()
+    public ResponseEntity<List<QuestionDTO>> generateQuestion(
+            @Valid @RequestBody QuestionGenerationRequestDTO request) {
+        String jobRequirements = request.skills().stream()
                 .map(dto -> "Skill %s - Weight: %d".formatted(dto.name(), dto.weight()))
                 .collect(Collectors.joining("\n"));
 
         List<QuestionDTO> questions = chatClient.prompt()
                 .user(
                         u -> u.text("""
-                        Generate 5 Java programming questions.
-                        Return ONLY raw, valid JSON. Do not include markdown formatting or introductory text.
-                        In Brazilian Portuguese.
-                        Specify question type as PRACTICAL or THEORETICAL.
-                        Create the test based on the required skills and their weights.
-                        The higher the weight, the more questions for that skill there should be.
-                        {requirements}
-                      """).param("requirements", jobRequirements)
+        Generate exactly 5 Java programming questions.
+        The response must contain exactly 5 questions.
+
+        Return ONLY raw, valid JSON.
+        Do not include markdown formatting or introductory text.
+        Write all questions in Brazilian Portuguese.
+
+        Use only the question types PRACTICAL and THEORETICAL.
+        Include both types in the test, with at least one question of each type.
+
+        Consider the manager's description when creating the questions:
+        {description}
+
+        Create the questions based on the required skills and their weights.
+        Skills with higher weights should have greater representation in the test.
+
+        Required skills:
+        {requirements}
+        """)
+                                .param("description", request.description())
+                                .param("requirements", jobRequirements)
                 )
                 .call()
                 .entity(new ParameterizedTypeReference<>() {});
