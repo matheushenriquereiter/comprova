@@ -5,20 +5,23 @@ info:
 
 http:
   method: POST
-  url: "{{url}}/generate-question"
+  url: "{{url}}/generate-questions"
   body:
     type: json
     data: |-
-      [
-        {
-          "name": "Java",
-          "weight": 20
-        },
-        {
-          "name": "Go",
-          "weight": 80
-        }
-      ]
+      {
+        "description": "Questões variadas",
+        "skills": [
+          {
+            "name": "Java",
+            "weight": 80
+          },
+          {
+            "name": "Programação Orientada a Objetos",
+            "weight": 20
+          }
+        ]
+      }
   auth: inherit
 
 settings:
