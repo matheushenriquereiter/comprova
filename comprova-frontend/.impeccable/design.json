@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T19:23:00Z",
+  "title": "Design System: ComProva",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Material Blue", "canonical": "#1a73e8" },
+      "success": { "role": "secondary", "displayName": "Success Green", "canonical": "#137333" },
+      "border-subtle": { "role": "neutral", "displayName": "Subtle Border", "canonical": "#dadce0" },
+      "text-primary": { "role": "neutral", "displayName": "Primary Text", "canonical": "#202124" }
+    },
+    "shadows": [
+      { "name": "shadow-fab", "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", "purpose": "Lifts the AI chat and Floating Action Button." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard call to action.",
+      "html": "<button class=\"ds-btn-primary\">Publish Posting</button>",
+      "css": ".ds-btn-primary { padding: 10px 24px; background: #1a73e8; color: #ffffff; border: none; border-radius: 4px; cursor: pointer; font-family: Roboto, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background 0.2s, box-shadow 0.2s; } .ds-btn-primary:hover { background: #1b66c9; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }"
+    },
+    {
+      "name": "Outlined Input",
+      "kind": "input",
+      "refersTo": "input-outlined",
+      "description": "Standard form field.",
+      "html": "<div class=\"ds-input-group\"><label class=\"ds-input-label\">Job Title</label><input type=\"text\" class=\"ds-input-field\" placeholder=\"e.g. Senior Frontend Engineer\"></div>",
+      "css": ".ds-input-group { display: flex; flex-direction: column; gap: 4px; font-family: Roboto, system-ui, sans-serif; } .ds-input-label { color: #5f6368; font-size: 12px; font-weight: 500; } .ds-input-field { width: 100%; background: transparent; border: 1px solid #dadce0; border-radius: 4px; outline: none; padding: 12px 14px; color: #202124; font-size: 14px; transition: border-color 0.2s; box-sizing: border-box; } .ds-input-field:focus { border: 2px solid #1a73e8; padding: 11px 13px; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Used in data tables to show entity state.",
+      "html": "<span class=\"ds-chip-success\">ACTIVE</span>",
+      "css": ".ds-chip-success { display: inline-flex; align-items: center; padding: 2px 8px; background-color: #e6f4ea; color: #137333; border-radius: 9999px; font-size: 12px; font-weight: 500; font-family: Roboto, system-ui, sans-serif; }"
+    },
+    {
+      "name": "AI Chat Bubble",
+      "kind": "custom",
+      "refersTo": "ai-bubble",
+      "description": "The message bubble used for the AI responses.",
+      "html": "<div class=\"ds-chat-bubble\">I've filtered the table to show candidates matching your query.</div>",
+      "css": ".ds-chat-bubble { max-width: 80%; padding: 8px 16px; font-family: Roboto, system-ui, sans-serif; font-size: 14px; background: #ffffff; border: 1px solid #dadce0; color: #202124; border-radius: 16px; border-bottom-left-radius: 2px; display: inline-block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Modern Material",
+    "overview": "A clean, familiar, and highly accessible interface inspired by Google's Workspace. It prioritizes extreme legibility, standardized outlined inputs, and clear primary actions over stylistic flourishes. It effortlessly accommodates dense data structures and interactive AI tools.",
+    "keyCharacteristics": [
+      "Pure white backgrounds and highly legible sans-serif typography.",
+      "Standardized Material Blue (#1a73e8) for primary actions, active states, and AI accents.",
+      "Highly structured data tables and modal flows."
+    ],
+    "rules": [
+      { "name": "The Flat Border Rule", "body": "Major containers are separated from the background using a 1px solid subtle border rather than elevation shadows.", "section": "elevation" },
+      { "name": "The Z-Index Shadow Rule", "body": "Drop shadows are used only for modals and Floating Action Buttons (FABs) to lift them off the flat page.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use standard outlined text fields.",
+      "Do use semantic colors (Green, Yellow, Red) strictly for states and scores."
+    ],
+    "donts": [
+      "Don't use heavy drop shadows on structural containers.",
+      "Don't use monospaced fonts for primary labels."
+    ]
+  }
+}
