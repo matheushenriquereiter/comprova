@@ -27,7 +27,7 @@ export const AuthService = {
     });
 
     if (!response.ok) {
-      throw new Error('Falha ao obter os dados do usuário.');
+      throw { status: response.status, message: 'Falha ao obter os dados do usuário.' };
     }
 
     return response.json();

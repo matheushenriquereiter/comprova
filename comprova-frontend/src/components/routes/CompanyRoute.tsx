@@ -23,8 +23,11 @@ export function CompanyRoute({ children }: PrivateRouteProps) {
             .then(user => {
                 setAuthenticatedUser(user);
             })
-            .catch(() => {
-                localStorage.removeItem('token');
+            .catch((err: unknown) => {
+                const error = err as { status?: number };
+                if (error?.status) {
+                    localStorage.removeItem('token');
+                }
             })
             .finally(() => {
                 setIsLoading(false);
