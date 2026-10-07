@@ -192,7 +192,7 @@ export function CandidateRegister() {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {serverError && (
           <div className="p-3 mb-2 bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] text-sm rounded-[4px]">
             {serverError}
@@ -208,6 +208,7 @@ export function CandidateRegister() {
           onChange={handleChange}
           error={errors.username}
           autoComplete="username"
+          disabled={isSubmitting}
           required 
           minLength={3}
           maxLength={20}
@@ -222,6 +223,7 @@ export function CandidateRegister() {
           onChange={handleChange}
           error={errors.email}
           autoComplete="email"
+          disabled={isSubmitting}
           required 
         />
         
@@ -234,6 +236,7 @@ export function CandidateRegister() {
           onChange={handleChange}
           error={errors.cpf}
           autoComplete="off"
+          disabled={isSubmitting}
           required 
           maxLength={14}
         />
@@ -247,6 +250,7 @@ export function CandidateRegister() {
           onChange={handleChange}
           error={errors.password}
           autoComplete="new-password"
+          disabled={isSubmitting}
           required 
           minLength={8}
           maxLength={128}
@@ -261,6 +265,7 @@ export function CandidateRegister() {
           onChange={handleChange}
           error={errors.confirmPassword}
           autoComplete="new-password"
+          disabled={isSubmitting}
           required 
           minLength={8}
           maxLength={128}
