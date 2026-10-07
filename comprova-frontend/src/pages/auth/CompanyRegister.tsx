@@ -83,9 +83,16 @@ export function CompanyRegister() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!formData.username || formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
+    else if (formData.username.length > 20) newErrors.username = 'Máximo de 20 caracteres';
+    
     if (!formData.email || !emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
+    
     if (!formData.legalName || formData.legalName.length < 3) newErrors.legalName = 'Mínimo de 3 caracteres';
+    else if (formData.legalName.length > 255) newErrors.legalName = 'Máximo de 255 caracteres';
+    
     if (!formData.tradeName || formData.tradeName.length < 3) newErrors.tradeName = 'Mínimo de 3 caracteres';
+    else if (formData.tradeName.length > 255) newErrors.tradeName = 'Máximo de 255 caracteres';
+    
     if (!formData.cnpj || !validateCNPJ(formData.cnpj)) newErrors.cnpj = 'Insira um CNPJ válido';
     
     const cleanPhone = formData.phone.replace(/[^\d+]/g, '');
@@ -93,6 +100,8 @@ export function CompanyRegister() {
     if (!cleanPhone || !phoneRegex.test(cleanPhone)) newErrors.phone = 'Insira um telefone válido';
     
     if (!formData.password || formData.password.length < 8) newErrors.password = 'Mínimo de 8 caracteres';
+    else if (formData.password.length > 128) newErrors.password = 'Máximo de 128 caracteres';
+    
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
 
     setErrors(newErrors);

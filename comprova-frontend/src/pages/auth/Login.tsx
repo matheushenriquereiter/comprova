@@ -10,13 +10,39 @@ export function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const [errors, setErrors] = useState({ email: '', password: '' });
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: '' });
     setServerError(null);
+  };
+
+  const validateForm = () => {
+    const newErrors = { email: '', password: '' };
+    let isValid = true;
+    
+    if (!formData.email) {
+      newErrors.email = 'O email é obrigatório';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Insira um email válido';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'A senha é obrigatória';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     setIsSubmitting(true);
     setServerError(null);
 
@@ -54,6 +80,7 @@ export function Login() {
           placeholder="usuario@exemplo.com"
           value={formData.email}
           onChange={handleChange}
+          error={errors.email}
           disabled={isSubmitting}
           autoComplete="email"
           required 
@@ -67,6 +94,7 @@ export function Login() {
             placeholder="••••••••"
             value={formData.password}
             onChange={handleChange}
+            error={errors.password}
             disabled={isSubmitting}
             autoComplete="current-password"
             required 

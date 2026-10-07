@@ -55,6 +55,7 @@ export function CandidateRegister() {
 
     if (!formData.username) newErrors.username = 'O nome de usuário é obrigatório';
     else if (formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
+    else if (formData.username.length > 20) newErrors.username = 'Máximo de 20 caracteres';
 
     if (!formData.email) newErrors.email = 'O email é obrigatório';
     else if (!emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
@@ -64,6 +65,7 @@ export function CandidateRegister() {
 
     if (!formData.password) newErrors.password = 'A senha é obrigatória';
     else if (formData.password.length < 8) newErrors.password = 'Mínimo de 8 caracteres';
+    else if (formData.password.length > 128) newErrors.password = 'Máximo de 128 caracteres';
 
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
 
