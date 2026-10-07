@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T21:58:00Z",
+  "title": "Design System: ComProva",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Validator Blue", "canonical": "#1a73e8" },
+      "neutral-text": { "role": "neutral", "displayName": "Text Primary", "canonical": "#202124" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and major headings." }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard call to action.",
+      "html": "<button class=\"ds-btn-primary\">CONTINUAR</button>",
+      "css": ".ds-btn-primary { background: #1a73e8; color: #fff; padding: 10px 24px; font-size: 14px; font-weight: 500; font-family: sans-serif; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); } .ds-btn-primary:hover { background: #1b66c9; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard form field.",
+      "html": "<div style=\"display: flex; flex-direction: column; gap: 6px; font-family: sans-serif;\"><label style=\"color: #5f6368; font-size: 12px; font-weight: 500;\">Email</label><input type=\"text\" placeholder=\"usuario@exemplo.com\" class=\"ds-input\" /></div>",
+      "css": ".ds-input { width: 100%; background: transparent; border: 1px solid #dadce0; border-radius: 4px; padding: 12px 14px; color: #202124; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input:hover { border-color: #80868b; } .ds-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 1px #1a73e8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Professional Validator",
+    "overview": "ComProva's visual language is clean, utilitarian, and heavily inspired by Google's Material Design. It prioritizes high legibility, trust, and frictionless task completion. The density is moderate to spacious, ensuring cognitive load remains low during complex recruitment processes.",
+    "keyCharacteristics": [
+      "Utilitarian and direct",
+      "Trustworthy and professional",
+      "High contrast for readability",
+      "Restrained use of color"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "The primary blue (#1a73e8) is the only color that should draw the eye. It is never used as a background for large sections (outside of the branded auth panel) and is reserved strictly for actions and active states.", "section": "colors" },
+      { "name": "The System First Rule", "body": "Do not load web fonts. The system relies entirely on native sans-serif fonts to maximize performance and preserve a utilitarian feel.", "section": "typography" },
+      { "name": "The Interaction Shadow Rule", "body": "Surfaces are flat at rest. Shadows appear only as a response to state (e.g., subtle shadows on primary buttons when hovered) to avoid visual noise.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do align form inputs perfectly to the grid, ensuring labels are directly tied to their inputs.",
+      "Do reserve space for error messages (using absolute positioning or min-heights) to prevent layout shifts during validation."
+    ],
+    "donts": [
+      "Don't use shadows on static cards or form containers.",
+      "Don't use nested cards. Keep the background clean and white."
+    ]
+  }
+}

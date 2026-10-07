@@ -3,12 +3,12 @@ package org.example.comprova.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.comprova.dto.*;
+import org.example.comprova.model.User;
 import org.example.comprova.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/auth")
@@ -38,8 +38,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> me(Principal principal) {
-        UserResponseDTO userResponseDTO = authService.me(principal.getName());
+    public ResponseEntity<UserResponseDTO> me(@AuthenticationPrincipal User user) {
+        UserResponseDTO userResponseDTO = authService.me(user.getUsername());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
     }
