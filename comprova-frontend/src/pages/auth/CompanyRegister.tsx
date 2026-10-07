@@ -2,217 +2,148 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
+import { AuthService } from '../../services/authService';
 
-function validateCNPJ(cnpj: string) {
+const validateCNPJ = (cnpj: string) => {
   cnpj = cnpj.replace(/[^\d]+/g, '');
-  if (cnpj === '') return false;
   if (cnpj.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(cnpj)) return false;
+
+  let tamanho = cnpj.length - 2;
+  let numeros = cnpj.substring(0, tamanho);
+  const digitos = cnpj.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
   
-  if (cnpj === "00000000000000" || 
-      cnpj === "11111111111111" || 
-      cnpj === "22222222222222" || 
-      cnpj === "33333333333333" || 
-      cnpj === "44444444444444" || 
-      cnpj === "55555555555555" || 
-      cnpj === "66666666666666" || 
-      cnpj === "77777777777777" || 
-      cnpj === "88888888888888" || 
-      cnpj === "99999999999999")
-      return false;
-      
-  let size = cnpj.length - 2;
-  let numbers = cnpj.substring(0, size);
-  const digits = cnpj.substring(size);
-  let sum = 0;
-  let pos = size - 7;
-  
-  for (let i = size; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(size - i)) * pos--;
-    if (pos < 2) pos = 9;
+  for (let i = tamanho; i >= 1; i--) {
+      soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+      if (pos < 2) pos = 9;
   }
-  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(0))) return false;
   
-  size = size + 1;
-  numbers = cnpj.substring(0, size);
-  sum = 0;
-  pos = size - 7;
-  for (let i = size; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(size - i)) * pos--;
-    if (pos < 2) pos = 9;
+  let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  if (resultado !== parseInt(digitos.charAt(0))) return false;
+
+  tamanho = tamanho + 1;
+  numeros = cnpj.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+  
+  for (let i = tamanho; i >= 1; i--) {
+      soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+      if (pos < 2) pos = 9;
   }
-  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(1))) return false;
   
+  resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  if (resultado !== parseInt(digitos.charAt(1))) return false;
+
   return true;
-}
+};
+
+const formatCNPJ = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,4})/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1');
+};
+
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length <= 10) {
+    return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+};
 
 export function CompanyRegister() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    legalName: '',
-    tradeName: '',
-    cnpj: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
+    username: '', email: '', legalName: '', tradeName: '', cnpj: '', phone: '', password: '', confirmPassword: ''
   });
-
-  const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    legalName: '',
-    tradeName: '',
-    cnpj: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
-  });
-
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState('');
-
-  const formatCNPJ = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d{1,2})/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let newValue = value;
     
-    if (name === 'cnpj') {
-      newValue = formatCNPJ(value);
-    }
+    if (name === 'cnpj') newValue = formatCNPJ(value);
+    else if (name === 'phone') newValue = formatPhone(value);
     
     setFormData(prev => ({ ...prev, [name]: newValue }));
-    
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     if (serverError) setServerError('');
   };
 
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.username || formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
+    if (!formData.email || !emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
+    if (!formData.legalName || formData.legalName.length < 3) newErrors.legalName = 'Mínimo de 3 caracteres';
+    if (!formData.tradeName || formData.tradeName.length < 3) newErrors.tradeName = 'Mínimo de 3 caracteres';
+    if (!formData.cnpj || !validateCNPJ(formData.cnpj)) newErrors.cnpj = 'Insira um CNPJ válido';
+    
+    const cleanPhone = formData.phone.replace(/[^\d+]/g, '');
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    if (!cleanPhone || !phoneRegex.test(cleanPhone)) newErrors.phone = 'Insira um telefone válido';
+    
+    if (!formData.password || formData.password.length < 8) newErrors.password = 'Mínimo de 8 caracteres';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setServerError('');
+    if (!validateForm()) return;
     
-    const newErrors = {
-      username: '',
-      email: '',
-      legalName: '',
-      tradeName: '',
-      cnpj: '',
-      phone: '',
-      password: '',
-      confirmPassword: ''
-    };
-    let isValid = true;
+    setIsSubmitting(true);
+    setServerError('');
 
-    if (!formData.username || formData.username.length < 3) {
-      newErrors.username = 'Mínimo de 3 caracteres';
-      isValid = false;
-    }
+    try {
+      // 1. Cadastra a empresa
+      await AuthService.signUpCompany({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        legalName: formData.legalName,
+        tradeName: formData.tradeName,
+        phone: formData.phone.replace(/[^\d+]/g, ''),
+        cnpj: formData.cnpj.replace(/\D/g, '')
+      });
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email || !emailRegex.test(formData.email)) {
-      newErrors.email = 'Insira um email válido';
-      isValid = false;
-    }
+      // 2. Realiza o login automático
+      const token = await AuthService.signIn(formData.email, formData.password);
+      localStorage.setItem('token', token);
+      
+      // 3. Redireciona para o dashboard da empresa
+      navigate('/company/dashboard');
 
-    if (!formData.legalName || formData.legalName.length < 3) {
-      newErrors.legalName = 'Mínimo de 3 caracteres';
-      isValid = false;
-    }
-
-    if (!formData.tradeName || formData.tradeName.length < 3) {
-      newErrors.tradeName = 'Mínimo de 3 caracteres';
-      isValid = false;
-    }
-
-    if (!formData.cnpj || !validateCNPJ(formData.cnpj)) {
-      newErrors.cnpj = 'Insira um CNPJ válido';
-      isValid = false;
-    }
-
-    const cleanPhone = formData.phone.replace(/[^\d+]/g, '');
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-    if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
-      newErrors.phone = 'Insira um telefone válido';
-      isValid = false;
-    }
-
-    if (!formData.password || formData.password.length < 8) {
-      newErrors.password = 'Mínimo de 8 caracteres';
-      isValid = false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'As senhas não coincidem';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-
-    if (isValid) {
-      setIsSubmitting(true);
-      try {
-        const response = await fetch('/api/auth/sign-up/company', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            legalName: formData.legalName,
-            tradeName: formData.tradeName,
-            phone: cleanPhone,
-            cnpj: formData.cnpj.replace(/\D/g, '')
-          }),
+    } catch (err: unknown) {
+      const data = err as { message?: string; errors?: Array<{ field: string; message: string }> };
+      if (data?.message === "Username is already in use.") {
+        setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
+      } else if (data?.message === "Email address is already in use.") {
+        setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
+      } else if (data?.message === "CNPJ is already in use.") {
+        setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está cadastrado.' }));
+      } else if (data?.errors && data.errors.length > 0) {
+        const apiErrors: Record<string, string> = {};
+        data.errors.forEach(errorItem => {
+          if (errorItem.field) apiErrors[errorItem.field] = errorItem.message || 'Campo inválido';
         });
-
-        if (response.ok) {
-          navigate('/login');
-        } else {
-          const data = await response.json().catch(() => null);
-          
-          if (data) {
-            if (data.message === "Username is already in use.") {
-              setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
-            } else if (data.message === "Email address is already in use.") {
-              setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
-            } else if (data.message === "CNPJ is already in use.") {
-              setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está cadastrado.' }));
-            } else if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-              const apiErrors = { ...newErrors };
-              data.errors.forEach((err: { field: string; message: string }) => {
-                if (err.field && err.field in apiErrors) {
-                   apiErrors[err.field as keyof typeof apiErrors] = err.message || 'Campo inválido';
-                }
-              });
-              setErrors(apiErrors);
-            } else {
-              setServerError(data.message || 'Erro ao registrar empresa. Verifique os dados e tente novamente.');
-            }
-          } else {
-            setServerError('Erro inesperado. Tente novamente mais tarde.');
-          }
-        }
-      } catch {
-        setServerError('Erro de conexão com o servidor. Verifique sua internet.');
-      } finally {
-        setIsSubmitting(false);
+        setErrors(prev => ({ ...prev, ...apiErrors }));
+      } else {
+        setServerError(data?.message || 'Erro ao registrar empresa. Verifique os dados e tente novamente.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,7 +233,7 @@ export function CompanyRegister() {
             label="Telefone" 
             name="phone" 
             type="tel" 
-            placeholder="+55 11 99999-9999"
+            placeholder="(11) 99999-9999"
             value={formData.phone}
             onChange={handleChange}
             error={errors.phone}

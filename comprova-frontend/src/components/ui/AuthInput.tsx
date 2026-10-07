@@ -37,7 +37,7 @@ export function AuthInput({ label, error, name, type, className = '', ...props }
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] hover:text-[#202124] transition-colors focus:outline-none focus:text-[#1a73e8]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] hover:text-[#202124] transition-colors focus:outline-none focus:text-[#1a73e8] cursor-pointer"
             aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
           >
             {showPassword ? (

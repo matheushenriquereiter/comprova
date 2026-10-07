@@ -95,7 +95,7 @@ export function JobPostingCandidates() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-[#1a73e8] text-sm font-medium hover:underline">Ver Perfil</button>
+                    <button className="text-[#1a73e8] text-sm font-medium hover:underline cursor-pointer">Ver Perfil</button>
                   </td>
                 </tr>
               ))}
@@ -115,7 +115,7 @@ export function JobPostingCandidates() {
                 <Bot className="w-5 h-5" />
                 <span className="font-medium text-sm">Assistente ComProva</span>
               </div>
-              <button onClick={() => setIsChatOpen(false)} className="text-white hover:bg-white/20 rounded-full p-1 transition-colors">
+              <button onClick={() => setIsChatOpen(false)} className="text-white hover:bg-white/20 rounded-full p-1 transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -148,7 +148,7 @@ export function JobPostingCandidates() {
                 <button 
                   type="submit"
                   disabled={!chatMessage.trim()}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-[#1a73e8] hover:bg-[#e8f0fe] disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-[#1a73e8] hover:bg-[#e8f0fe] disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -160,7 +160,7 @@ export function JobPostingCandidates() {
         {/* FAB */}
         <button 
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105 active:scale-95 ${
+          className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer ${
             isChatOpen ? 'bg-[#d93025]' : 'bg-[#1a73e8]'
           }`}
         >

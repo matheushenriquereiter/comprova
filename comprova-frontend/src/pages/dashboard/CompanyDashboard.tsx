@@ -36,7 +36,7 @@ export function CompanyDashboard() {
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[#1a73e8] text-white px-4 py-2 rounded-[4px] text-sm font-medium hover:bg-[#1b66c9] transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-[#1a73e8] text-white px-4 py-2 rounded-[4px] text-sm font-medium hover:bg-[#1b66c9] transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Nova Vaga
@@ -90,7 +90,7 @@ export function CompanyDashboard() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-[#5f6368] p-1.5 hover:bg-[#e8eaed] rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="text-[#5f6368] p-1.5 hover:bg-[#e8eaed] rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                       <MoreVertical className="w-4 h-4" />
                     </button>
                   </td>
@@ -116,19 +116,19 @@ export function CompanyDashboard() {
       >
         <div className="flex border-b border-[#dadce0] mb-6">
           <button 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'details' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
             onClick={() => setActiveTab('details')}
           >
             Detalhes Básicos
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'requirements' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'requirements' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
             onClick={() => setActiveTab('requirements')}
           >
             Requisitos
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'ai' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'ai' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
             onClick={() => setActiveTab('ai')}
           >
             <Wand2 className="w-4 h-4" /> Avaliação por IA
@@ -142,7 +142,7 @@ export function CompanyDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[#5f6368] text-xs font-medium">Modalidade</label>
-                <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8]">
+                <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8] cursor-pointer">
                   <option value="REMOTE">Remoto</option>
                   <option value="HYBRID">Híbrido</option>
                   <option value="ONSITE">Presencial</option>
@@ -150,7 +150,7 @@ export function CompanyDashboard() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[#5f6368] text-xs font-medium">Tipo de Contrato</label>
-                <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8]">
+                <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8] cursor-pointer">
                   <option value="FULL_TIME">Tempo Integral</option>
                   <option value="CONTRACTOR">PJ / Contratado</option>
                 </select>
@@ -182,7 +182,7 @@ export function CompanyDashboard() {
               <div className="w-32">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#5f6368] text-xs font-medium">Nível</label>
-                  <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8]">
+                  <select className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8] cursor-pointer">
                     <option value="JUNIOR">Júnior</option>
                     <option value="MID_LEVEL">Pleno</option>
                     <option value="SENIOR">Sênior</option>
@@ -211,7 +211,7 @@ export function CompanyDashboard() {
                 <p className="text-sm text-[#202124]">
                   A IA do ComProva criará questões técnicas baseadas nas habilidades e descrição fornecidas. Os candidatos farão este teste durante a inscrição.
                 </p>
-                <button className="mt-3 text-sm font-medium text-[#1a73e8] hover:underline">
+                <button className="mt-3 text-sm font-medium text-[#1a73e8] hover:underline cursor-pointer">
                   Gerar Perguntas de Teste
                 </button>
               </div>

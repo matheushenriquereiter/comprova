@@ -11,6 +11,8 @@ import { CompanyDashboard } from "./pages/dashboard/CompanyDashboard.tsx";
 import { JobPostingCandidates } from "./pages/dashboard/JobPostingCandidates.tsx";
 import { AuthLayout } from "./components/ui/AuthLayout.tsx";
 import { DashboardLayout } from "./components/ui/DashboardLayout.tsx";
+import { CandidateRoute } from "./components/routes/CandidateRoute.tsx";
+import { CandidateDashboard } from "./pages/dashboard/CandidateDashboard.tsx";
 
 const router = createBrowserRouter([
     {
@@ -63,6 +65,14 @@ const router = createBrowserRouter([
                     <CompanyRoute>
                         <JobPostingCandidates />
                     </CompanyRoute>
+                ),
+            },
+            {
+                path: "/candidate/dashboard",
+                element: (
+                    <CandidateRoute>
+                        <CandidateDashboard />
+                    </CandidateRoute>
                 ),
             }
         ]

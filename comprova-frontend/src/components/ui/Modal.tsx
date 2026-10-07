@@ -27,7 +27,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'ma
           <h2 className="text-lg font-medium text-[#202124]">{title}</h2>
           <button 
             onClick={onClose}
-            className="text-[#5f6368] hover:bg-[#f1f3f4] rounded-full p-2 transition-colors"
+            className="text-[#5f6368] hover:bg-[#f1f3f4] rounded-full p-2 transition-colors cursor-pointer"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -15,7 +15,7 @@ export function AuthButton({ children, variant = 'primary', isLoading, className
 
   return (
     <button 
-      className={`${baseClasses} ${colors[variant]} ${isLoading || props.disabled ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
+      className={`${baseClasses} ${colors[variant]} ${isLoading || props.disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
       {...props}
     >
       <span className="flex items-center justify-center gap-2">

@@ -2,191 +2,115 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
+import { AuthService } from '../../services/authService';
 
-function validateCPF(cpf: string) {
-  cpf = cpf.replace(/[^\d]+/g, '');
-  if (cpf === '') return false;
-  
-  if (cpf.length !== 11 ||
-      cpf === "00000000000" ||
-      cpf === "11111111111" ||
-      cpf === "22222222222" ||
-      cpf === "33333333333" ||
-      cpf === "44444444444" ||
-      cpf === "55555555555" ||
-      cpf === "66666666666" ||
-      cpf === "77777777777" ||
-      cpf === "88888888888" ||
-      cpf === "99999999999")
-      return false;
+const validateCPF = (cpf: string) => {
+  cpf = cpf.replace(/\D/g, '');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
       
   let add = 0;
-  for (let i = 0; i < 9; i++)
-      add += parseInt(cpf.charAt(i)) * (10 - i);
+  for (let i = 0; i < 9; i++) add += parseInt(cpf.charAt(i)) * (10 - i);
   let rev = 11 - (add % 11);
-  if (rev === 10 || rev === 11)
-      rev = 0;
-  if (rev !== parseInt(cpf.charAt(9)))
-      return false;
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(cpf.charAt(9))) return false;
       
   add = 0;
-  for (let i = 0; i < 10; i++)
-      add += parseInt(cpf.charAt(i)) * (11 - i);
+  for (let i = 0; i < 10; i++) add += parseInt(cpf.charAt(i)) * (11 - i);
   rev = 11 - (add % 11);
-  if (rev === 10 || rev === 11)
-      rev = 0;
-  if (rev !== parseInt(cpf.charAt(10)))
-      return false;
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(cpf.charAt(10))) return false;
       
   return true;
-}
+};
+
+const formatCPF = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1');
+};
 
 export function CandidateRegister() {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    cpf: '',
-    password: '',
-    confirmPassword: ''
-  });
-
-  const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    cpf: '',
-    password: '',
-    confirmPassword: ''
-  });
-  
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ username: '', email: '', cpf: '', password: '', confirmPassword: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState('');
-
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    let newValue = value;
-    
-    if (name === 'cpf') {
-      newValue = formatCPF(value);
-    }
+    const newValue = name === 'cpf' ? formatCPF(value) : value;
     
     setFormData(prev => ({ ...prev, [name]: newValue }));
-    
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     if (serverError) setServerError('');
   };
 
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.username) newErrors.username = 'O nome de usuário é obrigatório';
+    else if (formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
+
+    if (!formData.email) newErrors.email = 'O email é obrigatório';
+    else if (!emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
+
+    if (!formData.cpf) newErrors.cpf = 'O CPF é obrigatório';
+    else if (!validateCPF(formData.cpf)) newErrors.cpf = 'Insira um CPF válido';
+
+    if (!formData.password) newErrors.password = 'A senha é obrigatória';
+    else if (formData.password.length < 8) newErrors.password = 'Mínimo de 8 caracteres';
+
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setServerError('');
+    if (!validateForm()) return;
     
-    const newErrors = {
-      username: '',
-      email: '',
-      cpf: '',
-      password: '',
-      confirmPassword: ''
-    };
-    let isValid = true;
+    setIsSubmitting(true);
+    setServerError('');
 
-    if (!formData.username) {
-      newErrors.username = 'O nome de usuário é obrigatório';
-      isValid = false;
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'O nome de usuário deve ter no mínimo 3 caracteres';
-      isValid = false;
-    }
+    try {
+      // 1. Cadastra o candidato
+      await AuthService.signUpCandidate({
+        username: formData.username,
+        email: formData.email,
+        cpf: formData.cpf.replace(/\D/g, ''),
+        password: formData.password
+      });
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email) {
-      newErrors.email = 'O email é obrigatório';
-      isValid = false;
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Insira um email válido';
-      isValid = false;
-    }
+      // 2. Realiza o login automático
+      const token = await AuthService.signIn(formData.email, formData.password);
+      localStorage.setItem('token', token);
+      
+      // 3. Redireciona para o dashboard correto
+      navigate('/candidate/dashboard');
 
-    if (!formData.cpf) {
-      newErrors.cpf = 'O CPF é obrigatório';
-      isValid = false;
-    } else if (!validateCPF(formData.cpf)) {
-      newErrors.cpf = 'Insira um CPF válido';
-      isValid = false;
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'A senha é obrigatória';
-      isValid = false;
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'A senha deve ter no mínimo 8 caracteres';
-      isValid = false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'As senhas não coincidem';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-
-    if (isValid) {
-      setIsSubmitting(true);
-      try {
-        const response = await fetch('/api/auth/sign-up/candidate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            cpf: formData.cpf.replace(/\D/g, ''),
-            password: formData.password
-          }),
+    } catch (err: unknown) {
+      const data = err as { message?: string; errors?: Array<{ field: string; message: string }> };
+      if (data?.message === "Username is already in use.") {
+        setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
+      } else if (data?.message === "Email address is already in use.") {
+        setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
+      } else if (data?.errors && data.errors.length > 0) {
+        const apiErrors: Record<string, string> = {};
+        data.errors.forEach(errorItem => {
+          if (errorItem.field) apiErrors[errorItem.field] = errorItem.message || 'Campo inválido';
         });
-
-        if (response.ok) {
-          navigate('/login');
-        } else {
-          const data = await response.json().catch(() => null);
-          
-          if (data) {
-            if (data.message === "Username is already in use.") {
-              setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
-            } else if (data.message === "Email address is already in use.") {
-              setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
-            } else if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-              const apiErrors = { ...newErrors };
-              data.errors.forEach((err: { field: string; message: string }) => {
-                if (err.field && err.field in apiErrors) {
-                   apiErrors[err.field as keyof typeof apiErrors] = err.message || 'Campo inválido';
-                }
-              });
-              setErrors(apiErrors);
-            } else {
-              setServerError(data.message || 'Erro ao registrar candidato. Verifique os dados e tente novamente.');
-            }
-          } else {
-            setServerError('Erro inesperado. Tente novamente mais tarde.');
-          }
-        }
-      } catch {
-        setServerError('Erro de conexão com o servidor. Verifique sua internet.');
-      } finally {
-        setIsSubmitting(false);
+        setErrors(prev => ({ ...prev, ...apiErrors }));
+      } else {
+        setServerError(data?.message || 'Erro ao registrar. Verifique os dados ou tente novamente mais tarde.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -210,7 +134,6 @@ export function CandidateRegister() {
           autoComplete="username"
           disabled={isSubmitting}
           required 
-          minLength={3}
           maxLength={20}
         />
         
@@ -252,8 +175,6 @@ export function CandidateRegister() {
           autoComplete="new-password"
           disabled={isSubmitting}
           required 
-          minLength={8}
-          maxLength={128}
         />
 
         <AuthInput 
@@ -267,8 +188,6 @@ export function CandidateRegister() {
           autoComplete="new-password"
           disabled={isSubmitting}
           required 
-          minLength={8}
-          maxLength={128}
         />
 
         <div className="pt-2">

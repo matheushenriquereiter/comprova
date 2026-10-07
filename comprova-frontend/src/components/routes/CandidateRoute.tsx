@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { type User } from "../../types/User";
+import { AuthService } from "../../services/authService";
 
 type PrivateRouteProps = {
     children: ReactNode;
@@ -8,38 +9,43 @@ type PrivateRouteProps = {
 
 export function CandidateRoute({ children }: PrivateRouteProps) {
     const [authenticatedUser, setAuthenticatedUser] = useState<User>();
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(() => !!localStorage.getItem('token'));
+    const location = useLocation();
 
-    const requestAuthenticatedUser = () => {
-        fetch("/api/auth/me", {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-            },
-            credentials: "include",
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(response.statusText);
-                }
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            return;
+        }
 
-                return response.json();
-            })
+        AuthService.getMe(token)
             .then(user => {
                 setAuthenticatedUser(user);
+            })
+            .catch(() => {
+                localStorage.removeItem('token');
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    };
-
-    useEffect(requestAuthenticatedUser, []);
+    }, []);
 
     if (isLoading) {
-        return <div className="bg-black w-screen h-screen flex justify-center items-center text-white">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="animate-spin h-8 w-8 border-4 border-[#1a73e8] border-t-transparent rounded-full"></div>
+            </div>
+        );
     }
 
-    return authenticatedUser && authenticatedUser.role === "ROLE_CANDIDATE"
-        ? children
-        : <Navigate to={"/login"} />;
+    if (!authenticatedUser) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    if (authenticatedUser.role !== "ROLE_CANDIDATE") {
+        return <Navigate to="/company/dashboard" replace />;
+    }
+
+    return children;
 }
