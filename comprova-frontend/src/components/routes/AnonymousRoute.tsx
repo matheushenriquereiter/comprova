@@ -1,11 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-
-type User = {
-  username: string;
-  email: string;
-  role: string;
-};
+import { type User } from "../../types/User";
 
 type PrivateRouteProps = {
   children: ReactNode;
@@ -44,5 +39,14 @@ export function AnonymousRoute({ children }: PrivateRouteProps) {
     return <div className="bg-black w-screen h-screen">Loading...</div>;
   }
 
-  return authenticatedUser ? <Navigate to={"/home"} /> : children;
+  if (authenticatedUser) {
+    if (authenticatedUser.role === "ROLE_COMPANY") {
+      return <Navigate to="/company/dashboard" />;
+    } else if (authenticatedUser.role === "ROLE_CANDIDATE") {
+      return <Navigate to="/candidate/dashboard" />;
+    }
+    return <Navigate to="/" />;
+  }
+
+  return children;
 }
