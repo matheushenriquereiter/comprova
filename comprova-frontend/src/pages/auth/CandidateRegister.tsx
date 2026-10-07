@@ -46,15 +46,19 @@ export function CandidateRegister() {
     username: '',
     email: '',
     cpf: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
 
   const [errors, setErrors] = useState({
     username: '',
     email: '',
     cpf: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
+  
+  const [serverError, setServerError] = useState('');
 
   const formatCPF = (value: string) => {
     return value
@@ -78,6 +82,7 @@ export function CandidateRegister() {
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    if (serverError) setServerError('');
   };
 
   const navigate = useNavigate();
@@ -85,12 +90,14 @@ export function CandidateRegister() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerError('');
     
     const newErrors = {
       username: '',
       email: '',
       cpf: '',
-      password: ''
+      password: '',
+      confirmPassword: ''
     };
     let isValid = true;
 
@@ -127,6 +134,11 @@ export function CandidateRegister() {
       isValid = false;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'As senhas não coincidem';
+      isValid = false;
+    }
+
     setErrors(newErrors);
 
     if (isValid) {
@@ -148,11 +160,30 @@ export function CandidateRegister() {
         if (response.ok) {
           navigate('/login');
         } else {
-          // Se houver erro da API (ex: email já existe)
-          setErrors(prev => ({ ...prev, email: 'Erro ao registrar. Tente outro email/CPF.' }));
+          const data = await response.json().catch(() => null);
+          
+          if (data) {
+            if (data.message === "Username is already in use.") {
+              setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
+            } else if (data.message === "Email address is already in use.") {
+              setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
+            } else if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+              const apiErrors = { ...newErrors };
+              data.errors.forEach((err: { field: string; message: string }) => {
+                if (err.field && err.field in apiErrors) {
+                   apiErrors[err.field as keyof typeof apiErrors] = err.message || 'Campo inválido';
+                }
+              });
+              setErrors(apiErrors);
+            } else {
+              setServerError(data.message || 'Erro ao registrar candidato. Verifique os dados e tente novamente.');
+            }
+          } else {
+            setServerError('Erro inesperado. Tente novamente mais tarde.');
+          }
         }
       } catch {
-        setErrors(prev => ({ ...prev, email: 'Erro de conexão com o servidor.' }));
+        setServerError('Erro de conexão com o servidor. Verifique sua internet.');
       } finally {
         setIsSubmitting(false);
       }
@@ -162,6 +193,12 @@ export function CandidateRegister() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {serverError && (
+          <div className="p-3 mb-2 bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] text-sm rounded-[4px]">
+            {serverError}
+          </div>
+        )}
+      
         <AuthInput 
           label="Nome de Usuário" 
           name="username" 
@@ -170,6 +207,7 @@ export function CandidateRegister() {
           value={formData.username}
           onChange={handleChange}
           error={errors.username}
+          autoComplete="username"
           required 
           minLength={3}
           maxLength={20}
@@ -183,6 +221,7 @@ export function CandidateRegister() {
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
+          autoComplete="email"
           required 
         />
         
@@ -194,6 +233,7 @@ export function CandidateRegister() {
           value={formData.cpf}
           onChange={handleChange}
           error={errors.cpf}
+          autoComplete="off"
           required 
           maxLength={14}
         />
@@ -206,6 +246,21 @@ export function CandidateRegister() {
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
+          autoComplete="new-password"
+          required 
+          minLength={8}
+          maxLength={128}
+        />
+
+        <AuthInput 
+          label="Confirmar Senha" 
+          name="confirmPassword" 
+          type="password" 
+          placeholder="••••••••"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+          autoComplete="new-password"
           required 
           minLength={8}
           maxLength={128}
