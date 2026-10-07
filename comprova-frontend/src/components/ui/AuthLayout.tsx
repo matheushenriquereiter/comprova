@@ -59,7 +59,7 @@ export function AuthLayout() {
             {location.pathname.includes('register') && (
               <div className="flex border-b border-[#dadce0] mb-8">
                 <Link 
-                  to="/register/candidate" 
+                  to="/candidate/register"
                   className={`flex-1 py-3 text-center text-sm font-medium transition-colors relative
                     ${isCandidate ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'}`}
                 >
@@ -67,7 +67,7 @@ export function AuthLayout() {
                   {isCandidate && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8] rounded-t-md" />}
                 </Link>
                 <Link 
-                  to="/register/company" 
+                  to="/company/register"
                   className={`flex-1 py-3 text-center text-sm font-medium transition-colors relative
                     ${!isCandidate ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'}`}
                 >

@@ -41,5 +41,5 @@ export function CompanyRoute({ children }: PrivateRouteProps) {
 
     return authenticatedUser && authenticatedUser.role === "ROLE_COMPANY"
         ? children
-        : <Navigate to={"/log-in"} />;
+        : <Navigate to={"/login"} />;
 }

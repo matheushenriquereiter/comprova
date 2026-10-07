@@ -38,7 +38,7 @@ export function Login() {
 
       <div className="mt-8 text-center text-sm text-[#5f6368]">
         Não possui conta?{' '}
-        <Link to="/register/candidate" className="font-medium text-[#1a73e8] hover:underline">
+        <Link to="/candidate/register" className="font-medium text-[#1a73e8] hover:underline">
           Criar Conta
         </Link>
       </div>

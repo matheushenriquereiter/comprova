@@ -1,51 +1,76 @@
-import {StrictMode} from "react";
-import {createRoot} from "react-dom/client";
-import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import "./index.css";
-import {AnonymousRoute} from "./components/routes/AnonymousRoute.tsx";
-import {Login} from "./pages/auth/Login.tsx";
-import {CandidateRegister} from "./pages/auth/CandidateRegister.tsx";
-import {CompanyRegister} from "./pages/auth/CompanyRegister.tsx";
-import {CompanyRoute} from "./components/routes/CompanyRoute.tsx";
-import {CompanyDashboard} from "./pages/dashboard/CompanyDashboard.tsx";
+import { AnonymousRoute } from "./components/routes/AnonymousRoute.tsx";
+import { CompanyRoute } from "./components/routes/CompanyRoute.tsx";
+import { Login } from "./pages/auth/Login.tsx";
+import { CandidateRegister } from "./pages/auth/CandidateRegister.tsx";
+import { CompanyRegister } from "./pages/auth/CompanyRegister.tsx";
+import { CompanyDashboard } from "./pages/dashboard/CompanyDashboard.tsx";
+import { JobPostingCandidates } from "./pages/dashboard/JobPostingCandidates.tsx";
+import { AuthLayout } from "./components/ui/AuthLayout.tsx";
+import { DashboardLayout } from "./components/ui/DashboardLayout.tsx";
 
 const router = createBrowserRouter([
     {
-        path: "/login",
-        element: (
-            <AnonymousRoute>
-                <Login/>
-            </AnonymousRoute>
-        ),
+        path: "/",
+        element: <Navigate to="/login" replace />,
     },
     {
-        path: "/company/register",
-        element: (
-            <AnonymousRoute>
-                <CompanyRegister/>
-            </AnonymousRoute>
-        ),
+        element: <AuthLayout />,
+        children: [
+            {
+                path: "/login",
+                element: (
+                    <AnonymousRoute>
+                        <Login />
+                    </AnonymousRoute>
+                ),
+            },
+            {
+                path: "/candidate/register",
+                element: (
+                    <AnonymousRoute>
+                        <CandidateRegister />
+                    </AnonymousRoute>
+                ),
+            },
+            {
+                path: "/company/register",
+                element: (
+                    <AnonymousRoute>
+                        <CompanyRegister />
+                    </AnonymousRoute>
+                ),
+            },
+        ]
     },
     {
-        path: "/candidate/register",
-        element: (
-            <AnonymousRoute>
-                <CandidateRegister/>
-            </AnonymousRoute>
-        ),
-    },
-    {
-        path: "/company/dashboard",
-        element: (
-            <CompanyRoute>
-                <CompanyDashboard/>
-            </CompanyRoute>
-        ),
-    },
+        element: <DashboardLayout />,
+        children: [
+            {
+                path: "/company/dashboard",
+                element: (
+                    <CompanyRoute>
+                        <CompanyDashboard />
+                    </CompanyRoute>
+                ),
+            },
+            {
+                path: "/company/dashboard/postings/:id/candidates",
+                element: (
+                    <CompanyRoute>
+                        <JobPostingCandidates />
+                    </CompanyRoute>
+                ),
+            }
+        ]
+    }
 ]);
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <RouterProvider router={router}></RouterProvider>
+        <RouterProvider router={router} />
     </StrictMode>,
 );

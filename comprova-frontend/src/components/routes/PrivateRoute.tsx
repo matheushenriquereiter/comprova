@@ -39,5 +39,5 @@ export function PrivateRoute({ children }: PrivateRouteProps) {
         return <div className="bg-black w-screen h-screen">Loading...</div>;
     }
 
-    return authenticatedUser ? children : <Navigate to={"/log-in"} />;
+    return authenticatedUser ? children : <Navigate to={"/login"} />;
 }
