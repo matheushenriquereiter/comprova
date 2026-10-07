@@ -42,7 +42,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/generate-questions", "/ws", "/auth/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/generate-questions", "/ws", "/css/**", "/js/**", "/auth/sign-up/**", "/auth/sign-in").permitAll()
+                        .requestMatchers("/auth/me").authenticated()
                         .requestMatchers("/company/**").hasRole("COMPANY")
                         .requestMatchers("/candidate/**").hasRole("CANDIDATE")
                         .anyRequest().denyAll())

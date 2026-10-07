@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "job_posting_skills")
+@Table(name = "job_skill_requirements")
 @Getter
 @Setter
 @NoArgsConstructor
