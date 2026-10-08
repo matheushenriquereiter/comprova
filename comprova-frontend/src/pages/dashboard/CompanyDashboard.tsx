@@ -36,11 +36,11 @@ export function CompanyDashboard() {
       setJobs(page.content);
     } catch (err) {
       console.error(err);
-    } finally {
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchJobs();
   }, []);
 
