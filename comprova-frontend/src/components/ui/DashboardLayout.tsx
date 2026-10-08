@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function DashboardLayout() {
   const location = useLocation();
@@ -10,6 +11,17 @@ export function DashboardLayout() {
     localStorage.removeItem('token');
     navigate('/login');
   };
+
+  const navLinks = isCompany 
+    ? [
+        { path: '/company/dashboard', label: 'Vagas' },
+        { path: '#', label: 'Candidatos', disabled: true },
+        { path: '/company/profile', label: 'Perfil' }
+      ]
+    : [
+        { path: '/candidate/dashboard', label: 'Minhas Vagas' },
+        { path: '#', label: 'Testes Pendentes', disabled: true }
+      ];
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#202124] font-sans selection:bg-[#e8f0fe]">
@@ -22,41 +34,54 @@ export function DashboardLayout() {
               {isCompany ? 'Empresa' : 'Candidato'}
             </span>
           </Link>
-          <nav className="hidden md:flex gap-6">
-            {isCompany ? (
-              <>
-                <Link to="/company/dashboard" className={`text-sm font-medium h-16 flex items-center border-b-2 ${location.pathname === '/company/dashboard' ? 'text-[#1a73e8] border-[#1a73e8]' : 'text-[#5f6368] border-transparent hover:text-[#202124]'}`}>
-                  Vagas
-                </Link>
-                <span className="text-sm font-medium text-[#5f6368] h-16 flex items-center cursor-not-allowed">
-                  Candidatos
-                </span>
-              </>
-            ) : (
-              <>
-                <Link to="/candidate/dashboard" className={`text-sm font-medium h-16 flex items-center border-b-2 ${location.pathname === '/candidate/dashboard' ? 'text-[#1a73e8] border-[#1a73e8]' : 'text-[#5f6368] border-transparent hover:text-[#202124]'}`}>
-                  Minhas Vagas
-                </Link>
-                <span className="text-sm font-medium text-[#5f6368] h-16 flex items-center cursor-not-allowed">
-                  Testes Pendentes
-                </span>
-              </>
-            )}
-          </nav>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-sm font-medium">
-            {isCompany ? 'HR' : 'CD'}
+        <div className="flex items-center gap-6">
+          <nav className="hidden md:flex gap-6 mr-4 relative">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <div key={link.label} className="relative flex items-center h-16">
+                  {link.disabled ? (
+                    <span className="text-sm font-medium text-[#5f6368] cursor-not-allowed px-1">
+                      {link.label}
+                    </span>
+                  ) : (
+                    <Link
+                      to={link.path}
+                      className={`text-sm font-medium px-1 transition-colors ${
+                        isActive ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:text-[#202124]'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
+                  {isActive && !link.disabled && (
+                    <motion.div
+                      layoutId="activeTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8]"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-4 border-l border-[#dadce0] pl-6">
+            <div className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center text-sm font-medium">
+              {isCompany ? 'HR' : 'CD'}
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm font-medium text-[#5f6368] hover:text-[#d93025] transition-colors cursor-pointer"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-sm font-medium text-[#5f6368] hover:text-[#d93025] transition-colors ml-2 cursor-pointer"
-            title="Sair"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </button>
         </div>
       </header>
 

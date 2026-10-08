@@ -13,6 +13,7 @@ import { AuthLayout } from "./components/ui/AuthLayout.tsx";
 import { DashboardLayout } from "./components/ui/DashboardLayout.tsx";
 import { CandidateRoute } from "./components/routes/CandidateRoute.tsx";
 import { CandidateDashboard } from "./pages/dashboard/CandidateDashboard.tsx";
+import { CompanyProfile } from "./pages/dashboard/CompanyProfile.tsx";
 
 const router = createBrowserRouter([
     {
@@ -56,6 +57,14 @@ const router = createBrowserRouter([
                 element: (
                     <CompanyRoute>
                         <CompanyDashboard />
+                    </CompanyRoute>
+                ),
+            },
+            {
+                path: "/company/profile",
+                element: (
+                    <CompanyRoute>
+                        <CompanyProfile />
                     </CompanyRoute>
                 ),
             },
