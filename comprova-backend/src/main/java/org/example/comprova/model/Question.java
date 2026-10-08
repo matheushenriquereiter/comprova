@@ -23,6 +23,10 @@ public class Question {
     @JoinColumn(name = "job_posting_id", nullable = false)
     private JobPosting jobPosting;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_attempt_id")
+    private TestAttempt testAttempt;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String statement;
 

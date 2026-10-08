@@ -1,0 +1,17 @@
+info:
+  name: Start candidate test
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{url}}/candidate/job-postings/3/test/start"
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJqb3JnZSIsImlhdCI6MTc5MTQxOTI4NiwiZXhwIjoxNzkxNDIyODg2fQ.FHNTyPgfhd5zQeC_l3jPt2qIRlyTg01acU4V1R7Eyc2GGsNLv6ghi1s28p2wtg8dq7_kWBYzTXij1UCu-XRCow
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
