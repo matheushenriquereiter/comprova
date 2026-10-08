@@ -1,1 +1,9 @@
-sed -i 's/if (success) {/if (submitting) {\n    return (\n      <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center text-center max-w-md mx-auto">\n        <div className="w-16 h-16 bg-[#e8f0fe] rounded-full flex items-center justify-center mb-6 relative">\n          <div className="absolute inset-0 border-4 border-[#1a73e8] border-t-transparent rounded-full animate-spin"></div>\n          <Wand2 className="w-6 h-6 text-[#1a73e8]" />\n        </div>\n        <h2 className="text-2xl font-medium text-[#202124] mb-2">Avaliando suas respostas...</h2>\n        <p className="text-[#5f6368] mb-8">\n          A Inteligência Artificial da ComProva está lendo e corrigindo o seu teste em tempo real. Isso leva apenas alguns segundos.\n        </p>\n      </div>\n    );\n  }\n\n  if (success) {/g' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+# Fix getCandidateTestQuestions
+sed -i '/const response = await fetch/,/const data = await response.json();/c \        const data = await JobService.getCandidateTestQuestions(token, Number(id));' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+
+# Fix submitCandidateTest
+sed -i '/const response = await fetch/,/const responseData = await response.json();/c \      const responseData = await JobService.submitCandidateTest(token, Number(id), answers);' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+
+# Fix missing import if any
+sed -i '1s/^/import { JobService } from "..\/..\/services\/jobService";\n/' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+

@@ -1,61 +1,42 @@
 import { type User } from '../types/User';
+import { apiClient } from './apiClient';
 
 export const AuthService = {
   async signIn(email: string, password: string): Promise<string> {
-    const response = await fetch('/api/auth/sign-in', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Credenciais inválidas ou erro no servidor.');
+    try {
+      const data = await apiClient<{ token: string }>('/auth/sign-in', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      return data.token;
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      throw new Error(error?.message || 'Credenciais inválidas ou erro no servidor.');
     }
-
-    const data = await response.json();
-    return data.token; // Returns the token
   },
 
-  async getMe(token: string): Promise<User> {
-    const response = await fetch('/api/auth/me', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw { status: response.status, message: 'Falha ao obter os dados do usuário.' };
+  async getMe(_token?: string): Promise<User> {
+    try {
+      return await apiClient<User>('/auth/me', {
+        method: 'GET'
+      });
+    } catch (err: unknown) {
+      const error = err as { status?: number };
+      throw { status: error?.status || 401, message: 'Falha ao obter os dados do usuário.' };
     }
-
-    return response.json();
   },
 
   async signUpCandidate(data: Record<string, unknown>): Promise<void> {
-    const response = await fetch('/api/auth/sign-up/candidate', {
+    await apiClient('/auth/sign-up/candidate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData; // We throw the object to handle field errors
-    }
   },
 
   async signUpCompany(data: Record<string, unknown>): Promise<void> {
-    const response = await fetch('/api/auth/sign-up/company', {
+    await apiClient('/auth/sign-up/company', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData; // We throw the object to handle field errors
-    }
   }
 };
