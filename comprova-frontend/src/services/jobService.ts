@@ -36,6 +36,7 @@ export interface CreateJobPostingDTO {
   location: string;
   expiresAt: string; // YYYY-MM-DDTHH:mm:ss
   skills: JobSkillRequirement[];
+  questions: QuestionDTO[];
 }
 
 export interface QuestionDTO {

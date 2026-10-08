@@ -135,6 +135,11 @@ export function CompanyDashboard() {
       setActiveTab('requirements');
       return;
     }
+    if (questions.length === 0) {
+      setServerError("Gere ou adicione pelo menos uma questão antes de publicar a vaga.");
+      setActiveTab('ai');
+      return;
+    }
     
     setServerError('');
     setIsSubmitting(true);
@@ -150,7 +155,8 @@ export function CompanyDashboard() {
         employmentType: jobFormData.employmentType,
         location: jobFormData.location,
         expiresAt: expiresDate,
-        skills: skills
+        skills: skills,
+        questions: questions
       };
 
       await JobService.createJobPosting(token, payload);
@@ -240,38 +246,39 @@ export function CompanyDashboard() {
 
       {/* Data Table */}
       <div className="bg-white border border-[#dadce0] rounded-[8px] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f8f9fa] border-b border-[#dadce0]">
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Vaga</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Candidatos</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Expira em</th>
-                <th className="px-6 py-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#dadce0]">
-              {jobs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <Briefcase className="w-12 h-12 text-[#dadce0] mb-3" />
-                      <h3 className="text-base font-medium text-[#202124]">Nenhuma vaga cadastrada</h3>
-                      <p className="text-sm text-[#5f6368] mt-1 mb-4">Você ainda não criou nenhuma vaga.</p>
-                      <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 text-[#1a73e8] font-medium text-sm hover:underline"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Criar primeira vaga
-                      </button>
-                    </div>
-                  </td>
+        {jobs.length === 0 ? (
+          <div className="px-6 py-20 text-center bg-white">
+            <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+              <div className="w-16 h-16 bg-[#e8f0fe] rounded-full flex items-center justify-center mb-5 shadow-sm">
+                <Briefcase className="w-8 h-8 text-[#1a73e8]" />
+              </div>
+              <h3 className="text-lg font-medium text-[#202124] mb-2">Sua primeira vaga está a um clique</h3>
+              <p className="text-sm text-[#5f6368] mb-6 leading-relaxed">
+                Descreva a vaga e as habilidades exigidas. A IA da ComProva cuidará de gerar o teste técnico para validar seus candidatos sem gargalos.
+              </p>
+              <AuthButton 
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Criar Vaga com IA
+              </AuthButton>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f8f9fa] border-b border-[#dadce0]">
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Vaga</th>
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Candidatos</th>
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Expira em</th>
+                  <th className="px-6 py-3 text-right">Ações</th>
                 </tr>
-              ) : (
-                jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-[#f8f9fa] transition-colors group cursor-pointer" onClick={() => navigate(`/company/dashboard/postings/${job.id}/candidates`)}>
+              </thead>
+              <tbody className="divide-y divide-[#dadce0]">
+                {jobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-[#f8f9fa] transition-colors group cursor-pointer" onClick={() => navigate(`/company/dashboard/postings/${job.id}/candidates`)}>
                   <td className="px-6 py-4">
                     <div className="font-medium text-[#1a73e8] group-hover:underline">{job.title}</div>
                     <div className="text-xs text-[#5f6368] mt-1 flex items-center gap-1.5">
@@ -307,10 +314,11 @@ export function CompanyDashboard() {
                     </button>
                   </td>
                 </tr>
-              )))}
+              ))}
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Create Modal */}
