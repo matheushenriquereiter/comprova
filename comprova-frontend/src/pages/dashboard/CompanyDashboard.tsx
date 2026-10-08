@@ -67,6 +67,7 @@ export function CompanyDashboard() {
   // Delete Modal State
   const [deleteModalJobId, setDeleteModalJobId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -220,6 +221,11 @@ export function CompanyDashboard() {
     }
   };
 
+  const filteredJobs = jobs.filter(job => 
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (job.description && job.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="space-y-6">
       {/* Header section */}
@@ -235,6 +241,8 @@ export function CompanyDashboard() {
             <input 
               type="text" 
               placeholder="Buscar vagas..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white border border-[#dadce0] rounded-full pl-10 pr-4 py-2 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-all"
             />
           </div>
@@ -291,12 +299,24 @@ export function CompanyDashboard() {
               <p className="text-sm text-[#5f6368] mb-6 leading-relaxed">
                 Descreva a vaga e as habilidades exigidas. A IA da ComProva cuidará de gerar o teste técnico para validar seus candidatos sem gargalos.
               </p>
-              <AuthButton 
+              <button 
                 onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-medium rounded-full shadow-sm hover:shadow-md transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
                 Criar Vaga com IA
-              </AuthButton>
+              </button>
+            </div>
+          </div>
+        ) : filteredJobs.length === 0 ? (
+          <div className="px-6 py-20 text-center bg-white">
+            <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+              <div className="w-16 h-16 bg-[#f1f3f4] rounded-full flex items-center justify-center mb-5 shadow-sm">
+                <Search className="w-8 h-8 text-[#5f6368]" />
+              </div>
+              <h3 className="text-lg font-medium text-[#202124] mb-2">Nenhuma vaga encontrada</h3>
+              <p className="text-sm text-[#5f6368] mb-6 leading-relaxed">
+                Não encontramos nenhuma vaga com o termo "{searchTerm}".
+              </p>
             </div>
           </div>
         ) : (
@@ -312,7 +332,7 @@ export function CompanyDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#dadce0]">
-                {jobs.map((job) => (
+                {filteredJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-[#f8f9fa] transition-colors group cursor-pointer" onClick={() => navigate(`/company/dashboard/postings/${job.id}/candidates`)}>
                   <td className="px-6 py-4">
                     <div className="font-medium text-[#1a73e8] group-hover:underline">{job.title}</div>

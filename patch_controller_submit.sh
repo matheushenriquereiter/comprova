@@ -1,0 +1,2 @@
+sed -i 's/public ResponseEntity<Void> submitTest(/public ResponseEntity<Void> submitTest(\n            @RequestBody org.example.comprova.dto.SubmitTestDTO submitTestDTO,/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java
+sed -i 's/jobPostingService.submitApplicationTest(applicationId, candidate);/jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java

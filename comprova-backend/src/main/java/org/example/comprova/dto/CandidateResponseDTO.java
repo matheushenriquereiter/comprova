@@ -11,6 +11,10 @@ public record CandidateResponseDTO(
 
         @NotBlank(message = "User email cannot be null or empty.")
         @Email(message = "Invalid email format.")
-        String email
+        String email,
+        
+        Integer score,
+        
+        String status
 ) {
 }

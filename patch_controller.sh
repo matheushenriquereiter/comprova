@@ -1,0 +1,3 @@
+sed -i 's/public ResponseEntity<Void> submitTest(/public ResponseEntity<Integer> submitTest(/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java
+sed -i 's/jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);/Integer score = jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java
+sed -i 's/return ResponseEntity.ok().build();/return ResponseEntity.ok(score);/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java

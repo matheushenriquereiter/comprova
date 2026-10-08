@@ -1,0 +1,2 @@
+sed -i '/public ResponseEntity<Void> updateJobPosting/,/}/ s/return ResponseEntity.ok(java.util.Map.of("score", score));/return ResponseEntity.ok().build();/' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java
+sed -i '/public ResponseEntity<Void> deleteJobPosting/,/}/ s/return ResponseEntity.ok(java.util.Map.of("score", score));/return ResponseEntity.ok().build();/' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java

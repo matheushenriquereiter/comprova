@@ -1,0 +1,1 @@
+sed -i '/private JobPosting jobPosting;/a \    @Enumerated(EnumType.STRING)\n    @Column(nullable = false)\n    private org.example.comprova.enums.ApplicationStatus status = org.example.comprova.enums.ApplicationStatus.PENDING_TEST;\n\n    private Integer score;\n' comprova-backend/src/main/java/org/example/comprova/model/JobApplication.java

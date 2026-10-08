@@ -1,22 +1,38 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, X, Send, Bot, User, CheckCircle2, XCircle } from 'lucide-react';
-
-const MOCK_CANDIDATES = [
-  { id: 1, name: 'Alice Johnson', score: 92, appliedAt: '2026-10-01', status: 'PASSED' },
-  { id: 2, name: 'Bob Smith', score: 88, appliedAt: '2026-10-02', status: 'PASSED' },
-  { id: 3, name: 'Charlie Davis', score: 45, appliedAt: '2026-10-03', status: 'FAILED' },
-  { id: 4, name: 'Diana Prince', score: 95, appliedAt: '2026-10-04', status: 'PENDING_REVIEW' },
-];
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Bot, X, MessageSquare, Send } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 
 export function JobPostingCandidates() {
-  const { id } = useParams();
-  console.log("Viewing candidates for job ID:", id);
+  const { id } = useParams<{ id: string }>();
+  const [jobPosting, setJobPosting] = useState<JobPostingResponseDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [messages, setMessages] = useState([
     { role: 'ai', content: 'Olá! Posso ajudar a filtrar e classificar esses candidatos. O que você procura?' }
   ]);
+
+  useEffect(() => {
+    fetchJobPosting();
+  }, [id]);
+
+  const fetchJobPosting = async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token') || '';
+      const data = await JobService.getCompanyJobPostingById(token, Number(id));
+      setJobPosting(data);
+      setError('');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar detalhes da vaga.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,14 +41,33 @@ export function JobPostingCandidates() {
     setMessages([...messages, { role: 'user', content: chatMessage }]);
     setChatMessage('');
     
-    // Simulate AI response
     setTimeout(() => {
       setMessages(prev => [...prev, { 
         role: 'ai', 
-        content: `Filtrei a tabela para mostrar candidatos correspondentes a "${chatMessage}".` 
+        content: `Ainda não tenho acesso real ao backend de IA para filtrar candidatos, mas logo serei integrado!` 
       }]);
     }, 1000);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-[#5f6368]">
+        Carregando candidatos...
+      </div>
+    );
+  }
+
+  if (error || !jobPosting) {
+    return (
+      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
+        <div className="p-4 bg-[#fce8e6] text-[#c5221f] rounded-[8px] text-sm border border-[#fad2cf]">
+          {error || 'Vaga não encontrada.'}
+        </div>
+      </div>
+    );
+  }
+
+  const candidates = jobPosting.candidates || [];
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
@@ -43,65 +78,75 @@ export function JobPostingCandidates() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-normal text-[#202124]">Engenheiro Backend Java Sênior</h1>
-            <p className="text-[#5f6368] text-sm mt-1">4 candidatos inscritos</p>
+            <h1 className="text-2xl font-normal text-[#202124]">{jobPosting.title}</h1>
+            <p className="text-[#5f6368] text-sm mt-1">{candidates.length} candidato(s) inscrito(s)</p>
           </div>
         </div>
       </div>
 
       {/* Candidates Data Table */}
       <div className="bg-white border border-[#dadce0] rounded-[8px] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f8f9fa] border-b border-[#dadce0]">
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Candidato</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Score de Aderência</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Data de Inscrição</th>
-                <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#dadce0]">
-              {MOCK_CANDIDATES.map(candidate => (
-                <tr key={candidate.id} className="hover:bg-[#f8f9fa] transition-colors cursor-pointer">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-medium text-[#202124]">{candidate.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-full bg-[#f1f3f4] rounded-full h-1.5 max-w-[100px]">
-                        <div 
-                          className={`h-1.5 rounded-full ${candidate.score >= 80 ? 'bg-[#1a73e8]' : candidate.score >= 50 ? 'bg-[#fbbc04]' : 'bg-[#d93025]'}`}
-                          style={{ width: `${candidate.score}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-[#202124]">{candidate.score}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-[#5f6368]">
-                    {candidate.appliedAt}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
-                      {candidate.status === 'PASSED' && <><CheckCircle2 className="w-4 h-4 text-[#137333]" /> <span className="text-[#137333]">Aprovado</span></>}
-                      {candidate.status === 'FAILED' && <><XCircle className="w-4 h-4 text-[#d93025]" /> <span className="text-[#d93025]">Reprovado</span></>}
-                      {candidate.status === 'PENDING_REVIEW' && <><span className="w-2 h-2 rounded-full bg-[#fbbc04]" /> <span className="text-[#fbbc04]">Em Análise</span></>}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-[#1a73e8] text-sm font-medium hover:underline cursor-pointer">Ver Perfil</button>
-                  </td>
+        {candidates.length === 0 ? (
+          <div className="px-6 py-20 text-center bg-white">
+            <h3 className="text-lg font-medium text-[#202124] mb-2">Nenhum candidato ainda</h3>
+            <p className="text-sm text-[#5f6368]">Assim que candidatos se inscreverem, eles aparecerão aqui.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f8f9fa] border-b border-[#dadce0]">
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Candidato</th>
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Score IA</th>
+                  <th className="px-6 py-3 text-xs font-medium text-[#5f6368] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-right"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[#dadce0]">
+                {candidates.map((candidate, idx) => (
+                  <tr key={idx} className="hover:bg-[#f8f9fa] transition-colors cursor-pointer">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center font-bold">
+                          {candidate.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-[#202124]">{candidate.username}</span>
+                          <span className="text-xs text-[#5f6368]">{candidate.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {candidate.score !== undefined && candidate.score !== null ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-full bg-[#f1f3f4] rounded-full h-1.5 max-w-[100px]">
+                            <div 
+                              className={`h-1.5 rounded-full ${candidate.score >= 80 ? 'bg-[#1a73e8]' : candidate.score >= 50 ? 'bg-[#fbbc04]' : 'bg-[#d93025]'}`}
+                              style={{ width: `${candidate.score}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium text-[#202124]">{candidate.score}%</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-[#5f6368]">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {candidate.status === 'PASSED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#137333]"><span className="w-2 h-2 rounded-full bg-[#137333]" /> Aprovado</span>}
+                      {candidate.status === 'FAILED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#c5221f]"><span className="w-2 h-2 rounded-full bg-[#c5221f]" /> Reprovado</span>}
+                      {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Avaliação Concluída</span>}
+                      {candidate.status === 'PENDING_TEST' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#fbbc04] bg-opacity-20 text-[#d28a02] px-2 py-1 rounded-full border border-[#fbbc04]">Aguardando Teste</span>}
+                      {!candidate.status && <span className="text-xs text-[#5f6368]">Inscrito</span>}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-[#1a73e8] text-sm font-medium hover:underline cursor-pointer">Ver Perfil</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Floating AI Chat Assistant */}

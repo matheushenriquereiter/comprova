@@ -5,9 +5,10 @@ export interface JobSkillRequirement {
 
 
 export interface CandidateResponseDTO {
-  id: number;
-  name: string;
+  username: string;
   email: string;
+  score?: number;
+  status?: string;
 }
 
 export interface JobPostingResponseDTO {
@@ -53,6 +54,17 @@ export interface QuestionDTO {
 }
 
 export const JobService = {
+  async getCompanyJobPostingById(token: string, id: number): Promise<JobPostingResponseDTO> {
+    const response = await fetch(`/api/company/job-postings/${id}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    if (!response.ok) throw new Error("Falha ao buscar vaga");
+    return response.json();
+  },
+
   async getCompanyJobPostings(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
     const response = await fetch(`/api/company/job-postings?page=${page}&size=${size}`, {
       method: 'GET',
@@ -67,6 +79,52 @@ export const JobService = {
     }
 
     return response.json();
+  },
+
+  async getAvailableJobPostings(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
+    const response = await fetch(`/api/candidate/available-job-postings?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Falha ao buscar vagas disponíveis.");
+    }
+
+    return response.json();
+  },
+
+  async getCandidateApplications(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
+    const response = await fetch(`/api/candidate/job-postings?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Falha ao buscar suas candidaturas.");
+    }
+
+    return response.json();
+  },
+
+  async applyToJobPosting(token: string, jobPostingId: number): Promise<void> {
+    const response = await fetch(`/api/candidate/job-postings/${jobPostingId}/applications`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Falha ao se candidatar à vaga.");
+    }
   },
 
   async createJobPosting(token: string, data: CreateJobPostingDTO): Promise<void> {

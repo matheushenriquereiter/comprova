@@ -1,0 +1,2 @@
+sed -i 's/String workplaceType/String workplaceType,\n        java.time.LocalDateTime createdAt/g' comprova-backend/src/main/java/org/example/comprova/dto/CandidateApplicationDTO.java
+sed -i 's/app.getJobPosting().getWorkplaceType().name() : null/app.getJobPosting().getWorkplaceType().name() : null,\n                        app.getCreatedAt()/g' comprova-backend/src/main/java/org/example/comprova/service/JobPostingService.java

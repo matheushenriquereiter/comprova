@@ -17,6 +17,8 @@ public record CandidateJobApplicationResponseDTO(
         @Size(min = 5, max = 100, message = "Job title must be between 5 and 100 characters.")
         String title,
 
+        String companyName,
+
         String description,
         
         EmploymentType employmentType,

@@ -1,0 +1,2 @@
+sed -i '/import { CandidateAvailableJobs/a import { CandidateTest } from "./pages/dashboard/CandidateTest.tsx";' comprova-frontend/src/main.tsx
+sed -i '/path: "\/candidate\/jobs",/i \            {\n                path: "/candidate/test/:id",\n                element: (\n                    <CandidateRoute>\n                        <CandidateTest />\n                    </CandidateRoute>\n                ),\n            },\n' comprova-frontend/src/main.tsx

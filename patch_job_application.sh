@@ -1,0 +1,1 @@
+sed -i '/private org.example.comprova.enums.ApplicationStatus status/i \    @org.hibernate.annotations.CreationTimestamp\n    @Column(nullable = false, updatable = false)\n    private java.time.LocalDateTime createdAt;\n' comprova-backend/src/main/java/org/example/comprova/model/JobApplication.java

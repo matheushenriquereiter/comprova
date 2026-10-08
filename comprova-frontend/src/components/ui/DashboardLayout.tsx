@@ -19,6 +19,7 @@ export function DashboardLayout() {
         { path: '/company/profile', label: 'Perfil' }
       ]
     : [
+        { path: '/candidate/jobs', label: 'Procurar Vagas' },
         { path: '/candidate/dashboard', label: 'Minhas Vagas' },
         { path: '#', label: 'Testes Pendentes', disabled: true }
       ];

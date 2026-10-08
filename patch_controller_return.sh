@@ -1,0 +1,2 @@
+sed -i 's/public ResponseEntity<Integer> submitTest(/public ResponseEntity<java.util.Map<String, Integer>> submitTest(/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java
+sed -i 's/return ResponseEntity.ok(score);/return ResponseEntity.ok(java.util.Map.of("score", score));/g' comprova-backend/src/main/java/org/example/comprova/controller/JobPostingController.java

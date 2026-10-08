@@ -10,6 +10,11 @@ import java.util.Optional;
 
 @Repository
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
+    org.springframework.data.domain.Page<JobApplication> findAllByCandidateOrderByIdDesc(
+            Candidate candidate,
+            org.springframework.data.domain.Pageable pageable
+    );
+
 
     boolean existsByCandidateAndJobPosting(
             Candidate candidate,
