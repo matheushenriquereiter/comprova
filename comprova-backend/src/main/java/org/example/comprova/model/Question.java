@@ -8,24 +8,15 @@ import org.example.comprova.enums.QuestionType;
 
 import java.util.List;
 
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity
 @Table(name = "questions")
 public class Question {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_posting_id", nullable = false)
-    private JobPosting jobPosting;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "test_attempt_id")
-    private TestAttempt testAttempt;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String statement;
@@ -52,4 +43,26 @@ public class Question {
     )
     @Column(name = "criterion", nullable = false)
     private List<String> evaluationCriteria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_posting_id", nullable = false)
+    private JobPosting jobPosting;
+
+    public Question(
+            String statement,
+            QuestionType type,
+            String skillEvaluated,
+            Integer estimatedTimeMinutes,
+            String expectedAnswer,
+            String codeSnippet,
+            List<String> evaluationCriteria
+    ) {
+        this.statement = statement;
+        this.type = type;
+        this.skillEvaluated = skillEvaluated;
+        this.estimatedTimeMinutes = estimatedTimeMinutes;
+        this.expectedAnswer = expectedAnswer;
+        this.codeSnippet = codeSnippet;
+        this.evaluationCriteria = evaluationCriteria;
+    }
 }

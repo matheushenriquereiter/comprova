@@ -1,15 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, MoreVertical, Users, Wand2, Briefcase, Calendar, X, Trash2, Edit2, Save } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
-import { JobService, type JobSkillRequirement, type QuestionDTO, type CreateJobPostingDTO } from '../../services/jobService';
+import { JobService, type JobSkillRequirement, type QuestionDTO, type CreateJobPostingDTO, type JobPostingResponseDTO } from '../../services/jobService';
 
-const MOCK_JOBS = [
-  { id: 1, title: 'Engenheiro Backend Java Sênior', workplace: 'REMOTO', status: 'ACTIVE', candidates: 4, expiresAt: '2023-12-31' },
-  { id: 2, title: 'Desenvolvedor Frontend Pleno', workplace: 'HYBRID', status: 'DRAFT', candidates: 0, expiresAt: '2023-11-15' },
-];
+
 
 const STATUS_MAP: Record<string, string> = {
   'ACTIVE': 'Ativa',
@@ -29,6 +26,24 @@ export function CompanyDashboard() {
   const [activeTab, setActiveTab] = useState<'details' | 'requirements' | 'ai'>('details');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
+
+  const fetchJobs = async () => {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const page = await JobService.getCompanyJobPostings(token);
+      setJobs(page.content);
+    } catch (err) {
+      console.error(err);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
 
   // Form States
   const [jobFormData, setJobFormData] = useState({
@@ -150,7 +165,7 @@ export function CompanyDashboard() {
       setQuestions([]);
       setActiveTab('details');
       
-      // We should ideally refetch MOCK_JOBS here, but for now we just close the modal.
+      fetchJobs();
     } catch (err: unknown) {
       const errorObj = err as { message?: string; errors?: { field: string; message: string }[] };
       if (errorObj.errors && errorObj.errors.length > 0) {
@@ -237,12 +252,30 @@ export function CompanyDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#dadce0]">
-              {MOCK_JOBS.map((job) => (
+              {jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <Briefcase className="w-12 h-12 text-[#dadce0] mb-3" />
+                      <h3 className="text-base font-medium text-[#202124]">Nenhuma vaga cadastrada</h3>
+                      <p className="text-sm text-[#5f6368] mt-1 mb-4">Você ainda não criou nenhuma vaga.</p>
+                      <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 text-[#1a73e8] font-medium text-sm hover:underline"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Criar primeira vaga
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                jobs.map((job) => (
                 <tr key={job.id} className="hover:bg-[#f8f9fa] transition-colors group cursor-pointer" onClick={() => navigate(`/company/dashboard/postings/${job.id}/candidates`)}>
                   <td className="px-6 py-4">
                     <div className="font-medium text-[#1a73e8] group-hover:underline">{job.title}</div>
                     <div className="text-xs text-[#5f6368] mt-1 flex items-center gap-1.5">
-                      <Briefcase className="w-3 h-3" /> {WORKPLACE_MAP[job.workplace] || job.workplace}
+                      <Briefcase className="w-3 h-3" /> {WORKPLACE_MAP[job.workplaceType] || job.workplaceType}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -255,8 +288,8 @@ export function CompanyDashboard() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5 text-sm text-[#202124]">
                       <Users className="w-4 h-4 text-[#5f6368]" />
-                      {job.candidates > 0 ? (
-                        <span className="font-medium">{job.candidates} inscritos</span>
+                      {(job.candidates?.length || 0) > 0 ? (
+                        <span className="font-medium">{job.candidates?.length} inscritos</span>
                       ) : (
                         <span className="text-[#5f6368]">Nenhuma inscrição ainda</span>
                       )}
@@ -265,7 +298,7 @@ export function CompanyDashboard() {
                   <td className="px-6 py-4 text-sm text-[#5f6368]">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
-                      {job.expiresAt}
+                      {new Date(job.expiresAt).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -274,7 +307,7 @@ export function CompanyDashboard() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

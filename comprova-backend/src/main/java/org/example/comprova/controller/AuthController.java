@@ -41,6 +41,6 @@ public class AuthController {
     public ResponseEntity<UserResponseDTO> me(@AuthenticationPrincipal User user) {
         UserResponseDTO userResponseDTO = authService.me(user.getUsername());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
+        return ResponseEntity.ok(userResponseDTO);
     }
 }

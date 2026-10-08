@@ -71,7 +71,19 @@ public class JobPosting {
     @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<JobApplication> jobApplications = new HashSet<>();
 
-    public JobPosting(String title, String description, WorkplaceType workplaceType, EmploymentType employmentType, String location, Company company, LocalDateTime expiresAt) {
+    @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Question> questions = new HashSet<>();
+
+    public JobPosting(
+            String title,
+            String description,
+            WorkplaceType workplaceType,
+            EmploymentType employmentType,
+            String location,
+            Company company,
+            LocalDateTime expiresAt,
+            Set<Question> questions
+    ) {
         this.title = title;
         this.description = description;
         this.workplaceType = workplaceType;
@@ -79,6 +91,7 @@ public class JobPosting {
         this.location = location;
         this.company = company;
         this.expiresAt = expiresAt;
+        this.questions = questions;
     }
 
     public void addApplication(JobApplication jobApplication) {

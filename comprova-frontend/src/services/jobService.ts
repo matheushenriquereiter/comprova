@@ -3,6 +3,31 @@ export interface JobSkillRequirement {
   weight: number;
 }
 
+
+export interface CandidateResponseDTO {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface JobPostingResponseDTO {
+  id: number;
+  title: string;
+  status: string;
+  expiresAt: string;
+  workplaceType: string;
+  candidates: CandidateResponseDTO[];
+  skills: JobSkillRequirement[];
+}
+
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
 export interface CreateJobPostingDTO {
   title: string;
   description: string;
@@ -24,6 +49,22 @@ export interface QuestionDTO {
 }
 
 export const JobService = {
+  async getCompanyJobPostings(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
+    const response = await fetch(`/api/company/job-postings?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Failed to fetch job postings.");
+    }
+
+    return response.json();
+  },
+
   async createJobPosting(token: string, data: CreateJobPostingDTO): Promise<void> {
     const response = await fetch('/api/company/job-postings', {
       method: 'POST',

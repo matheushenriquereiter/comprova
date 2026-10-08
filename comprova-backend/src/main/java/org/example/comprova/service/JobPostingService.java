@@ -24,8 +24,26 @@ public class JobPostingService {
     private final JobSkillRequirementRepository jobSkillRequirementRepository;
     private final JobApplicationRepository jobApplicationRepository;
 
+    public Question questionDTOToEntity(QuestionDTO questionDTO) {
+        return new Question(
+                questionDTO.statement(),
+                questionDTO.type(),
+                questionDTO.skillEvaluated(),
+                questionDTO.estimatedTimeMinutes(),
+                questionDTO.expectedAnswer(),
+                questionDTO.codeSnippet(),
+                questionDTO.evaluationCriteria()
+        );
+    }
+
     @Transactional
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
+        List<Question> questions = createJobPostingDTO
+                .questions()
+                .stream()
+                .map(this::questionDTOToEntity)
+                .toList();
+
         JobPosting jobPosting = new JobPosting(
                 createJobPostingDTO.title(),
                 createJobPostingDTO.description(),
@@ -33,9 +51,11 @@ public class JobPostingService {
                 createJobPostingDTO.employmentType(),
                 createJobPostingDTO.location(),
                 company,
-                createJobPostingDTO.expiresAt()
+                createJobPostingDTO.expiresAt(),
+                new java.util.HashSet<>(questions)
         );
 
+        questions.forEach(q -> q.setJobPosting(jobPosting));
         jobPostingRepository.save(jobPosting);
 
         List<JobSkillRequirement> jobSkillRequirements = createJobPostingDTO.skills()
@@ -83,6 +103,7 @@ public class JobPostingService {
                 .map(JobPostingService::mapJobPostingToResponseDTO);
     }
 
+    @Transactional(readOnly = true)
     public Page<CandidateJobApplicationResponseDTO> getCandidateApplications(Candidate candidate, Pageable pageable) {
         return jobPostingRepository
                 .findAllByJobApplications_CandidateOrderByCreatedAtDesc(candidate, pageable)
@@ -93,8 +114,12 @@ public class JobPostingService {
         return new CandidateJobApplicationResponseDTO(
                 jobPosting.getId(),
                 jobPosting.getTitle(),
+                jobPosting.getDescription(),
+                jobPosting.getEmploymentType(),
+                jobPosting.getLocation(),
                 jobPosting.getStatus(),
                 jobPosting.getExpiresAt(),
+                jobPosting.getWorkplaceType().name(),
 
                 jobPosting.getSkills().stream()
                         .map(JobPostingService::mapJobPostingSkillToResponseDTO)
@@ -107,8 +132,12 @@ public class JobPostingService {
         return new JobPostingResponseDTO(
                 jobPosting.getId(),
                 jobPosting.getTitle(),
+                jobPosting.getDescription(),
+                jobPosting.getEmploymentType(),
+                jobPosting.getLocation(),
                 jobPosting.getStatus(),
                 jobPosting.getExpiresAt(),
+                jobPosting.getWorkplaceType(),
 
                 jobPosting.getJobApplications()
                         .stream()

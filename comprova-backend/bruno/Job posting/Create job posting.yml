@@ -29,6 +29,70 @@ http:
             "name": "React",
             "weight": 20
           }
+        ],
+        "questions": [
+          {
+            "statement": "Explain the difference between == and .equals() in Java.",
+            "type": "THEORETICAL",
+            "skillEvaluated": "Java",
+            "estimatedTimeMinutes": 3,
+            "expectedAnswer": "The == operator compares object references, meaning it checks if both references point to the same memory location. The .equals() method compares the actual content or state of the objects, assuming it is properly overridden.",
+            "codeSnippet": "String a = new String(\"test\");\nString b = new String(\"test\");\nSystem.out.println(a == b);\nSystem.out.println(a.equals(b));",
+            "evaluationCriteria": [
+              "Mention that == compares references",
+              "Mention that .equals() compares values/content"
+            ]
+          },
+          {
+            "statement": "What is a NullPointerException and how can you avoid it?",
+            "type": "THEORETICAL",
+            "skillEvaluated": "Java",
+            "estimatedTimeMinutes": 3,
+            "expectedAnswer": "A NullPointerException occurs when you attempt to use an object reference that has the null value. It can be avoided by checking for null before using the object, using Optional, or ensuring variables are properly initialized.",
+            "codeSnippet": "String s = null;\nint length = s.length(); // Throws NullPointerException",
+            "evaluationCriteria": [
+              "Explain it happens when using a null reference",
+              "Mention null checks or Optional to prevent it"
+            ]
+          },
+          {
+            "statement": "Write a method that reverses a given string in Java.",
+            "type": "PRACTICAL",
+            "skillEvaluated": "Java",
+            "estimatedTimeMinutes": 5,
+            "expectedAnswer": "public String reverse(String input) { return new StringBuilder(input).reverse().toString(); }",
+            "codeSnippet": "public String reverse(String input) {\n    // Implement string reversal\n}",
+            "evaluationCriteria": [
+              "Proper syntax for reversing",
+              "Correct use of StringBuilder or character array"
+            ]
+          },
+          {
+            "statement": "Explain the concept of inheritance in Java.",
+            "type": "THEORETICAL",
+            "skillEvaluated": "Java",
+            "estimatedTimeMinutes": 4,
+            "expectedAnswer": "Inheritance is an OOP concept where a new class (subclass) inherits fields and methods from an existing class (superclass). It promotes code reusability and establishes a hierarchical relationship.",
+            "codeSnippet": "class Animal { void eat() {} }\nclass Dog extends Animal { void bark() {} }",
+            "evaluationCriteria": [
+              "Mention code reuse",
+              "Mention superclass/subclass relationship",
+              "Mention 'extends' keyword"
+            ]
+          },
+          {
+            "statement": "How do you handle exceptions in Java?",
+            "type": "THEORETICAL",
+            "skillEvaluated": "Java",
+            "estimatedTimeMinutes": 4,
+            "expectedAnswer": "Exceptions are handled using try, catch, and finally blocks. Code that might throw an exception is placed in the try block, the catch block handles the exception, and the finally block executes regardless of whether an exception occurred.",
+            "codeSnippet": "try {\n    int data = 50 / 0;\n} catch (ArithmeticException e) {\n    System.out.println(e);\n} finally {\n    System.out.println(\"Finally block\");\n}",
+            "evaluationCriteria": [
+              "Mention try-catch blocks",
+              "Mention finally block",
+              "Explain throwing and catching mechanism"
+            ]
+          }
         ]
       }
   auth: inherit
