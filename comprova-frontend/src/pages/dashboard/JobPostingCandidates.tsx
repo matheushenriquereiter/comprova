@@ -16,23 +16,23 @@ export function JobPostingCandidates() {
   ]);
 
   useEffect(() => {
+    const fetchJobPosting = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token') || '';
+        const data = await JobService.getCompanyJobPostingById(token, Number(id));
+        setJobPosting(data);
+        setError('');
+      } catch (err: unknown) {
+        setError((err as Error).message || 'Erro ao carregar candidatos.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchJobPosting();
   }, [id]);
 
-  const fetchJobPosting = async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token') || '';
-      const data = await JobService.getCompanyJobPostingById(token, Number(id));
-      setJobPosting(data);
-      setError('');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar detalhes da vaga.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

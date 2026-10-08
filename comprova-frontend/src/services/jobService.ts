@@ -1,8 +1,9 @@
+import { apiClient } from './apiClient';
+
 export interface JobSkillRequirement {
   name: string;
   weight: number;
 }
-
 
 export interface CandidateResponseDTO {
   username: string;
@@ -24,6 +25,20 @@ export interface JobPostingResponseDTO {
   skills: JobSkillRequirement[];
 }
 
+export interface CandidateApplicationDTO {
+  applicationId: number;
+  jobPostingId: number;
+  title: string;
+  companyName: string;
+  employmentType: string;
+  location: string;
+  status: string;
+  jobPostingStatus: string;
+  score?: number;
+  workplaceType: string;
+  createdAt: string;
+}
+
 export interface Page<T> {
   content: T[];
   totalElements: number;
@@ -35,10 +50,10 @@ export interface Page<T> {
 export interface CreateJobPostingDTO {
   title: string;
   description: string;
-  workplaceType: string; // TRADITIONAL, REMOTE, HYBRID
-  employmentType: string; // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP
+  workplaceType: string;
+  employmentType: string;
   location: string;
-  expiresAt: string; // YYYY-MM-DDTHH:mm:ss
+  expiresAt: string;
   skills: JobSkillRequirement[];
   questions: QuestionDTO[];
 }
@@ -54,140 +69,59 @@ export interface QuestionDTO {
 }
 
 export const JobService = {
-  async getCompanyJobPostingById(token: string, id: number): Promise<JobPostingResponseDTO> {
-    const response = await fetch(`/api/company/job-postings/${id}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    });
-    if (!response.ok) throw new Error("Falha ao buscar vaga");
-    return response.json();
+  async getCompanyJobPostingById(_token: string, id: number): Promise<JobPostingResponseDTO> {
+    return apiClient<JobPostingResponseDTO>(`/company/job-postings/${id}`, { method: "GET" });
   },
 
-  async getCompanyJobPostings(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
-    const response = await fetch(`/api/company/job-postings?page=${page}&size=${size}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao buscar vagas.");
-    }
-
-    return response.json();
+  async getCompanyJobPostings(_token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
+    return apiClient<Page<JobPostingResponseDTO>>(`/company/job-postings?page=${page}&size=${size}`, { method: 'GET' });
   },
 
-  async getAvailableJobPostings(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
-    const response = await fetch(`/api/candidate/available-job-postings?page=${page}&size=${size}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao buscar vagas disponíveis.");
-    }
-
-    return response.json();
+  async getAvailableJobPostings(_token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
+    return apiClient<Page<JobPostingResponseDTO>>(`/candidate/available-job-postings?page=${page}&size=${size}`, { method: 'GET' });
   },
 
-  async getCandidateApplications(token: string, page: number = 0, size: number = 20): Promise<Page<JobPostingResponseDTO>> {
-    const response = await fetch(`/api/candidate/job-postings?page=${page}&size=${size}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao buscar suas candidaturas.");
-    }
-
-    return response.json();
+  async getCandidateApplications(_token: string, page: number = 0, size: number = 20): Promise<Page<CandidateApplicationDTO>> {
+    return apiClient<Page<CandidateApplicationDTO>>(`/candidate/job-postings?page=${page}&size=${size}`, { method: 'GET' });
   },
 
-  async applyToJobPosting(token: string, jobPostingId: number): Promise<void> {
-    const response = await fetch(`/api/candidate/job-postings/${jobPostingId}/applications`, {
+  async applyToJobPosting(_token: string, jobPostingId: number): Promise<void> {
+    await apiClient(`/candidate/job-postings/${jobPostingId}/applications`, { method: 'POST' });
+  },
+
+  async createJobPosting(_token: string, data: CreateJobPostingDTO): Promise<void> {
+    await apiClient('/company/job-postings', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao se candidatar à vaga.");
-    }
-  },
-
-  async createJobPosting(token: string, data: CreateJobPostingDTO): Promise<void> {
-    const response = await fetch('/api/company/job-postings', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao criar vaga.");
-    }
   },
 
-  async generateQuestions(token: string, description: string, skills: JobSkillRequirement[]): Promise<QuestionDTO[]> {
-    const response = await fetch('/api/generate-questions', {
+  async generateQuestions(_token: string, description: string, skills: JobSkillRequirement[]): Promise<QuestionDTO[]> {
+    return apiClient<QuestionDTO[]>('/generate-questions', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ description, skills })
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao gerar questões.");
-    }
-
-    return response.json();
   },
 
-  async updateJobPosting(token: string, id: number, data: Partial<CreateJobPostingDTO> & { status?: string }): Promise<void> {
-    const response = await fetch(`/api/company/job-postings/${id}`, {
+  async updateJobPosting(_token: string, id: number, data: Partial<CreateJobPostingDTO> & { status?: string }): Promise<void> {
+    await apiClient(`/company/job-postings/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao atualizar vaga.");
-    }
   },
 
-  async deleteJobPosting(token: string, id: number): Promise<void> {
-    const response = await fetch(`/api/company/job-postings/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  async getCandidateTestQuestions(_token: string, applicationId: number): Promise<QuestionDTO[]> {
+    return apiClient<QuestionDTO[]>(`/candidate/applications/${applicationId}/test`, { method: 'GET' });
+  },
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Falha ao deletar vaga.");
-    }
+  async submitCandidateTest(_token: string, applicationId: number, answers: Record<number, string>): Promise<{ score: number }> {
+    return apiClient<{ score: number }>(`/candidate/applications/${applicationId}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ answers })
+    });
+  },
+
+  async deleteJobPosting(_token: string, id: number): Promise<void> {
+    await apiClient(`/company/job-postings/${id}`, { method: 'DELETE' });
   }
 };

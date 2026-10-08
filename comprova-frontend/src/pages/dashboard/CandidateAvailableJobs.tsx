@@ -1,21 +1,11 @@
+import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import { useState, useEffect } from 'react';
 import { Briefcase, MapPin, Search, CheckCircle } from 'lucide-react';
 import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 import { Modal } from '../../components/ui/Modal';
 import { AuthButton } from '../../components/ui/AuthButton';
 
-const WORKPLACE_MAP: Record<string, string> = {
-  'REMOTE': 'Remoto',
-  'HYBRID': 'Híbrido',
-  'TRADITIONAL': 'Presencial'
-};
 
-const EMPLOYMENT_MAP: Record<string, string> = {
-  'FULL_TIME': 'Tempo Integral',
-  'PART_TIME': 'Meio Período',
-  'CONTRACT': 'PJ / Contratado',
-  'INTERNSHIP': 'Estágio'
-};
 
 export function CandidateAvailableJobs() {
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
@@ -30,28 +20,26 @@ export function CandidateAvailableJobs() {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token') || '';
+        const [availableJobsRes, appliedJobsRes] = await Promise.all([
+          JobService.getAvailableJobPostings(token),
+          JobService.getCandidateApplications(token)
+        ]);
+        setJobs(availableJobsRes.content);
+        setAppliedJobs(new Set(appliedJobsRes.content.map((j) => j.jobPostingId)));
+        setError('');
+      } catch (err: unknown) {
+        setError((err as Error).message || 'Erro ao carregar vagas.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchJobs();
   }, []);
 
-  const fetchJobs = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token') || '';
-      
-      const [availableJobsRes, appliedJobsRes] = await Promise.all([
-        JobService.getAvailableJobPostings(token),
-        JobService.getCandidateApplications(token)
-      ]);
-      
-      setJobs(availableJobsRes.content);
-      setAppliedJobs(new Set(appliedJobsRes.content.map((j: any) => j.jobPostingId)));
-      setError('');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar vagas.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleApplyClick = (job: JobPostingResponseDTO) => {
     setConfirmModalJob(job);
@@ -69,8 +57,8 @@ export function CandidateAvailableJobs() {
       setConfirmModalJob(null);
       setSuccessMessage(`Sua candidatura para a vaga "${confirmModalJob.title}" foi enviada com sucesso! Fique de olho no seu painel para realizar o teste técnico quando for liberado.`);
       setSuccessModalOpen(true);
-    } catch (err: any) {
-      window.alert(err.message || 'Erro ao se candidatar.');
+    } catch (err: unknown) {
+      window.alert((err as Error).message || 'Erro ao se candidatar.');
       setConfirmModalJob(null);
     } finally {
       setApplyingJobId(null);

@@ -1,3 +1,5 @@
+import { STATUS_MAP, WORKPLACE_MAP } from "../../utils/constants";
+import { useCallback } from "react";
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Users, Wand2, Briefcase, Calendar, X, Trash2, Edit2, Save } from 'lucide-react';
@@ -8,16 +10,7 @@ import { JobService, type JobSkillRequirement, type QuestionDTO, type CreateJobP
 
 
 
-const STATUS_MAP: Record<string, string> = {
-  'PUBLISHED': 'Ativa',
-  'CLOSED': 'Encerrada'
-};
 
-const WORKPLACE_MAP: Record<string, string> = {
-  'REMOTE': 'Remoto',
-  'HYBRID': 'Híbrido',
-  'TRADITIONAL': 'Presencial'
-};
 
 export function CompanyDashboard() {
   const navigate = useNavigate();
@@ -28,7 +21,7 @@ export function CompanyDashboard() {
 
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       const token = localStorage.getItem('token') || '';
       const page = await JobService.getCompanyJobPostings(token);
@@ -36,12 +29,11 @@ export function CompanyDashboard() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchJobs();
-  }, []);
+  }, [fetchJobs]);
 
 
   // Form States
@@ -82,7 +74,7 @@ export function CompanyDashboard() {
       await JobService.deleteJobPosting(token, deleteModalJobId);
       setDeleteModalJobId(null);
       fetchJobs();
-    } catch (_error) {
+    } catch {
       window.alert('Erro ao deletar vaga.');
     } finally {
       setIsDeleting(false);

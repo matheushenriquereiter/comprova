@@ -1,0 +1,20 @@
+# Fix CandidateAvailableJobs
+sed -i '/useEffect(() => {/,/}, \[\]);/c \  useEffect(() => {\n    const fetchJobs = async () => {\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('\''token'\'') || '\'''\'';\n        const [availableJobsRes, appliedJobsRes] = await Promise.all([\n          JobService.getAvailableJobPostings(token),\n          JobService.getCandidateApplications(token)\n        ]);\n        setJobs(availableJobsRes.content);\n        setAppliedJobs(new Set(appliedJobsRes.content.map((j: any) => j.jobPostingId)));\n        setError('\'''\'');\n      } catch (err: any) {\n        setError(err.message || '\''Erro ao carregar vagas.'\'');\n      } finally {\n        setLoading(false);\n      }\n    };\n    fetchJobs();\n  }, []);' comprova-frontend/src/pages/dashboard/CandidateAvailableJobs.tsx
+sed -i '/async function fetchJobs() {/,/  };/d' comprova-frontend/src/pages/dashboard/CandidateAvailableJobs.tsx
+
+# Fix CandidateDashboard
+sed -i '/useEffect(() => {/,/}, \[\]);/c \  useEffect(() => {\n    const fetchApplications = async () => {\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('\''token'\'') || '\'''\'';\n        const res = await JobService.getCandidateApplications(token);\n        setApplications(res.content);\n        setError('\'''\'');\n      } catch (err: any) {\n        setError(err.message || '\''Erro ao carregar candidaturas.'\'');\n      } finally {\n        setLoading(false);\n      }\n    };\n    fetchApplications();\n  }, []);' comprova-frontend/src/pages/dashboard/CandidateDashboard.tsx
+sed -i '/async function fetchApplications() {/,/  };/d' comprova-frontend/src/pages/dashboard/CandidateDashboard.tsx
+
+# Fix CandidateTest
+sed -i '/useEffect(() => {/,/}, \[id\]);/c \  useEffect(() => {\n    const fetchQuestions = async () => {\n      if (!id) return;\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('\''token'\'') || '\'''\'';\n        const data = await JobService.getCandidateTestQuestions(token, Number(id));\n        setQuestions(data);\n        setError('\'''\'');\n      } catch (err: any) {\n        setError(err.message || '\''Erro ao carregar a prova.'\'');\n      } finally {\n        setLoading(false);\n      }\n    };\n    fetchQuestions();\n  }, [id]);' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+sed -i '/async function fetchQuestions() {/,/  };/d' comprova-frontend/src/pages/dashboard/CandidateTest.tsx
+
+# Fix JobPostingCandidates
+sed -i '/useEffect(() => {/,/}, \[id\]);/c \  useEffect(() => {\n    const fetchJobPosting = async () => {\n      if (!id) return;\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('\''token'\'') || '\'''\'';\n        const data = await JobService.getCompanyJobPostingById(token, Number(id));\n        setJobPosting(data);\n        setError('\'''\'');\n      } catch (err: any) {\n        setError(err.message || '\''Erro ao carregar candidatos.'\'');\n      } finally {\n        setLoading(false);\n      }\n    };\n    fetchJobPosting();\n  }, [id]);' comprova-frontend/src/pages/dashboard/JobPostingCandidates.tsx
+sed -i '/async function fetchJobPosting() {/,/  };/d' comprova-frontend/src/pages/dashboard/JobPostingCandidates.tsx
+
+# Fix CompanyDashboard
+sed -i '/useEffect(() => {/,/}, \[\]);/c \  useEffect(() => {\n    const fetchJobPostings = async () => {\n      setLoading(true);\n      try {\n        const token = localStorage.getItem('\''token'\'') || '\'''\'';\n        const data = await JobService.getCompanyJobPostings(token);\n        setJobPostings(data.content || []);\n        setError('\'''\'');\n      } catch (err: any) {\n        setError(err.message || '\''Erro ao buscar as vagas.'\'');\n      } finally {\n        setLoading(false);\n      }\n    };\n    fetchJobPostings();\n  }, []);' comprova-frontend/src/pages/dashboard/CompanyDashboard.tsx
+sed -i '/async function fetchJobPostings() {/,/  };/d' comprova-frontend/src/pages/dashboard/CompanyDashboard.tsx
+

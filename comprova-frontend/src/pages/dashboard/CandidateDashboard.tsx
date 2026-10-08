@@ -1,37 +1,34 @@
+import { WORKPLACE_MAP } from "../../utils/constants";
+import type { CandidateApplicationDTO } from "../../services/jobService";
 import { useState, useEffect } from 'react';
 import { Briefcase, Building, Clock, MapPin, CheckCircle, Search, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { JobService } from '../../services/jobService';
 
-const WORKPLACE_MAP: Record<string, string> = {
-  'REMOTE': 'Remoto',
-  'HYBRID': 'Híbrido',
-  'TRADITIONAL': 'Presencial'
-};
 
 export function CandidateDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<CandidateApplicationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const fetchApplications = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await JobService.getCandidateApplications(token);
+        setApplications(res.content);
+        setError('');
+      } catch (err: unknown) {
+        setError((err as Error).message || 'Erro ao carregar candidaturas.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchApplications();
   }, []);
 
-  const fetchApplications = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token') || '';
-      const res = await JobService.getCandidateApplications(token);
-      setApplications(res.content);
-      setError('');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar candidaturas.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredApplications = applications.filter(app => 
     app.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

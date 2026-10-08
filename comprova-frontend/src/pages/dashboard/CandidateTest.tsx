@@ -1,3 +1,4 @@
+import { JobService } from "../../services/jobService";
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Code, FileText, CheckCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
@@ -17,30 +18,23 @@ export function CandidateTest() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    const fetchQuestions = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token') || '';
+        const data = await JobService.getCandidateTestQuestions(token, Number(id));
+        setQuestions(data);
+        setError('');
+      } catch (err: unknown) {
+        setError((err as Error).message || 'Erro ao carregar a prova.');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchQuestions();
   }, [id]);
 
-  const fetchQuestions = async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/api/candidate/applications/${id}/test`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Falha ao carregar as questões da prova');
-      }
-      const data = await response.json();
-      setQuestions(data);
-      setError('');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar prova.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAnswerChange = (idx: number, value: string) => {
     setAnswers(prev => ({ ...prev, [idx]: value }));
@@ -59,24 +53,11 @@ export function CandidateTest() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/api/candidate/applications/${id}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ answers }) // sending dummy structure, backend just updates status
-      });
-      
-      if (!response.ok) {
-        throw new Error('Falha ao enviar a prova');
-      }
-      
-      const responseData = await response.json();
+      const responseData = await JobService.submitCandidateTest(token, Number(id), answers);
       setScore(responseData.score);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao enviar a prova.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Erro ao enviar a prova.');
     } finally {
       setSubmitting(false);
     }
@@ -145,7 +126,6 @@ export function CandidateTest() {
             <p className="text-[#5f6368] text-sm mt-1">Responda as questões abaixo. Não se preocupe em criar uma solução perfeita se o tempo acabar.</p>
           </div>
           
-          {/* Global timer pseudo-component */}
           <div className="bg-[#fff8e1] px-4 py-2 rounded-[8px] flex items-center gap-2 border border-[#fce8e6] text-[#fbbc04] font-medium">
             <Clock className="w-4 h-4" /> Em andamento
           </div>
