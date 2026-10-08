@@ -163,4 +163,37 @@ public class JobPostingService {
                 jobApplication.getCandidate().getEmail()
         );
     }
+
+    @Transactional
+    public void updateJobPosting(Company company, Long jobPostingId, UpdateJobPostingDTO updateJobPostingDTO) {
+        JobPosting jobPosting = jobPostingRepository
+                .findById(jobPostingId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Job posting not found."));
+
+        if (!jobPosting.getCompany().getId().equals(company.getId())) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "You do not have permission to update this job posting.");
+        }
+
+        jobPosting.setTitle(updateJobPostingDTO.title());
+        jobPosting.setDescription(updateJobPostingDTO.description());
+        jobPosting.setWorkplaceType(updateJobPostingDTO.workplaceType());
+        jobPosting.setEmploymentType(updateJobPostingDTO.employmentType());
+        jobPosting.setLocation(updateJobPostingDTO.location());
+        jobPosting.setStatus(updateJobPostingDTO.status());
+
+        jobPostingRepository.save(jobPosting);
+    }
+
+    @Transactional
+    public void deleteJobPosting(Company company, Long jobPostingId) {
+        JobPosting jobPosting = jobPostingRepository
+                .findById(jobPostingId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Job posting not found."));
+
+        if (!jobPosting.getCompany().getId().equals(company.getId())) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "You do not have permission to delete this job posting.");
+        }
+
+        jobPostingRepository.delete(jobPosting);
+    }
 }

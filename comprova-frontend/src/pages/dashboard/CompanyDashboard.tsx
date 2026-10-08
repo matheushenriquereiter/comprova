@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, MoreVertical, Users, Wand2, Briefcase, Calendar, X, Trash2, Edit2, Save } from 'lucide-react';
+import { Plus, Search, Users, Wand2, Briefcase, Calendar, X, Trash2, Edit2, Save } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
@@ -9,8 +9,7 @@ import { JobService, type JobSkillRequirement, type QuestionDTO, type CreateJobP
 
 
 const STATUS_MAP: Record<string, string> = {
-  'ACTIVE': 'Ativa',
-  'DRAFT': 'Rascunho',
+  'PUBLISHED': 'Ativa',
   'CLOSED': 'Encerrada'
 };
 
@@ -46,13 +45,15 @@ export function CompanyDashboard() {
 
 
   // Form States
+  const [editingJobId, setEditingJobId] = useState<number | null>(null);
   const [jobFormData, setJobFormData] = useState({
     title: '',
     description: '',
     workplaceType: 'REMOTE',
     employmentType: 'FULL_TIME',
     location: '',
-    expiresAt: ''
+    expiresAt: '',
+    status: 'PUBLISHED'
   });
   const [skills, setSkills] = useState<JobSkillRequirement[]>([]);
   const [newSkillName, setNewSkillName] = useState('');
@@ -63,9 +64,28 @@ export function CompanyDashboard() {
   const [questions, setQuestions] = useState<QuestionDTO[]>([]);
   const [editingQuestionIdx, setEditingQuestionIdx] = useState<number | null>(null);
 
+  // Delete Modal State
+  const [deleteModalJobId, setDeleteModalJobId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setJobFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalJobId) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token') || '';
+      await JobService.deleteJobPosting(token, deleteModalJobId);
+      setDeleteModalJobId(null);
+      fetchJobs();
+    } catch (_error) {
+      window.alert('Erro ao deletar vaga.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const currentWeightSum = skills.reduce((acc, skill) => acc + skill.weight, 0);
@@ -130,15 +150,19 @@ export function CompanyDashboard() {
       setActiveTab('details');
       return;
     }
-    if (currentWeightSum !== 100) {
-      setServerError(`A soma dos pesos das habilidades deve ser exatamente 100. Atualmente está em ${currentWeightSum}.`);
-      setActiveTab('requirements');
-      return;
-    }
-    if (questions.length === 0) {
-      setServerError("Gere ou adicione pelo menos uma questão antes de publicar a vaga.");
-      setActiveTab('ai');
-      return;
+    
+    // Validate only for Creation, not for update (update doesn't change skills/questions yet)
+    if (!editingJobId) {
+      if (currentWeightSum !== 100) {
+        setServerError(`A soma dos pesos das habilidades deve ser exatamente 100. Atualmente está em ${currentWeightSum}.`);
+        setActiveTab('requirements');
+        return;
+      }
+      if (questions.length === 0) {
+        setServerError("Gere ou adicione pelo menos uma questão antes de publicar a vaga.");
+        setActiveTab('ai');
+        return;
+      }
     }
     
     setServerError('');
@@ -148,24 +172,35 @@ export function CompanyDashboard() {
       const token = localStorage.getItem('token') || '';
       const expiresDate = `${jobFormData.expiresAt}T23:59:59`;
 
-      const payload: CreateJobPostingDTO = {
-        title: jobFormData.title,
-        description: jobFormData.description,
-        workplaceType: jobFormData.workplaceType,
-        employmentType: jobFormData.employmentType,
-        location: jobFormData.location,
-        expiresAt: expiresDate,
-        skills: skills,
-        questions: questions
-      };
-
-      await JobService.createJobPosting(token, payload);
+      if (editingJobId) {
+        await JobService.updateJobPosting(token, editingJobId, {
+          title: jobFormData.title,
+          description: jobFormData.description,
+          workplaceType: jobFormData.workplaceType,
+          employmentType: jobFormData.employmentType,
+          location: jobFormData.location,
+          status: jobFormData.status
+        });
+      } else {
+        const payload: CreateJobPostingDTO = {
+          title: jobFormData.title,
+          description: jobFormData.description,
+          workplaceType: jobFormData.workplaceType,
+          employmentType: jobFormData.employmentType,
+          location: jobFormData.location,
+          expiresAt: expiresDate,
+          skills: skills,
+          questions: questions
+        };
+        await JobService.createJobPosting(token, payload);
+      }
       
       // Success
       setIsModalOpen(false);
       // Reset form
+      setEditingJobId(null);
       setJobFormData({
-        title: '', description: '', workplaceType: 'REMOTE', employmentType: 'FULL_TIME', location: '', expiresAt: ''
+        title: '', description: '', workplaceType: 'REMOTE', employmentType: 'FULL_TIME', location: '', expiresAt: '', status: 'PUBLISHED'
       });
       setSkills([]);
       setQuestions([]);
@@ -178,7 +213,7 @@ export function CompanyDashboard() {
         const errorMessages = errorObj.errors.map(e => e.message).join(' | ');
         setServerError(errorMessages);
       } else {
-        setServerError(errorObj?.message || "Erro ao publicar vaga.");
+        setServerError(errorObj?.message || "Erro ao salvar vaga.");
       }
     } finally {
       setIsSubmitting(false);
@@ -287,7 +322,9 @@ export function CompanyDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      job.status === 'ACTIVE' ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-[#f1f3f4] text-[#5f6368]'
+                      job.status === 'PUBLISHED' ? 'bg-[#e6f4ea] text-[#137333]' : 
+                      job.status === 'CLOSED' ? 'bg-[#fce8e6] text-[#c5221f]' : 
+                      'bg-[#f1f3f4] text-[#5f6368]'
                     }`}>
                       {STATUS_MAP[job.status] || job.status}
                     </span>
@@ -309,9 +346,39 @@ export function CompanyDashboard() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-[#5f6368] p-1.5 hover:bg-[#e8eaed] rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={(e) => { e.stopPropagation(); }}>
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        className="text-[#5f6368] p-1.5 hover:bg-[#e8eaed] hover:text-[#1a73e8] rounded-full transition-colors cursor-pointer" 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setEditingJobId(job.id);
+                          setJobFormData({
+                            title: job.title,
+                            description: job.description || '',
+                            workplaceType: job.workplaceType,
+                            employmentType: job.employmentType || 'FULL_TIME',
+                            location: job.location || '',
+                            expiresAt: job.expiresAt ? job.expiresAt.split('T')[0] : '',
+                            status: job.status
+                          });
+                          setIsModalOpen(true);
+                          setActiveTab('details');
+                        }}
+                        title="Editar Vaga"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        className="text-[#5f6368] p-1.5 hover:bg-[#fce8e6] hover:text-[#d93025] rounded-full transition-colors cursor-pointer" 
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          setDeleteModalJobId(job.id);
+                        }}
+                        title="Deletar Vaga"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -324,13 +391,23 @@ export function CompanyDashboard() {
       {/* Create Modal */}
       <Modal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)}
-        title="Criar Nova Vaga"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingJobId(null);
+          setJobFormData({ title: '', description: '', workplaceType: 'REMOTE', employmentType: 'FULL_TIME', location: '', expiresAt: '', status: 'PUBLISHED' });
+        }}
+        title={editingJobId ? "Editar Vaga" : "Criar Nova Vaga"}
         maxWidth="max-w-3xl"
         footer={
           <>
-            <AuthButton variant="secondary" onClick={() => setIsModalOpen(false)} disabled={isSubmitting || isGenerating}>Cancelar</AuthButton>
-            <AuthButton variant="primary" onClick={handleSubmitJob} isLoading={isSubmitting} disabled={isGenerating}>Publicar Vaga</AuthButton>
+            <AuthButton variant="secondary" onClick={() => {
+              setIsModalOpen(false);
+              setEditingJobId(null);
+              setJobFormData({ title: '', description: '', workplaceType: 'REMOTE', employmentType: 'FULL_TIME', location: '', expiresAt: '', status: 'PUBLISHED' });
+            }} disabled={isSubmitting || isGenerating}>Cancelar</AuthButton>
+            <AuthButton variant="primary" onClick={handleSubmitJob} isLoading={isSubmitting} disabled={isGenerating}>
+              {editingJobId ? "Salvar Vaga" : "Publicar Vaga"}
+            </AuthButton>
           </>
         }
       >
@@ -346,18 +423,22 @@ export function CompanyDashboard() {
           >
             Detalhes Básicos
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'requirements' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
-            onClick={() => setActiveTab('requirements')}
-          >
-            Requisitos
-          </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'ai' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
-            onClick={() => setActiveTab('ai')}
-          >
-            <Wand2 className="w-4 h-4" /> Avaliação por IA
-          </button>
+          {!editingJobId && (
+            <>
+              <button 
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'requirements' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
+                onClick={() => setActiveTab('requirements')}
+              >
+                Requisitos
+              </button>
+              <button 
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'ai' ? 'border-[#1a73e8] text-[#1a73e8]' : 'border-transparent text-[#5f6368] hover:text-[#202124]'}`}
+                onClick={() => setActiveTab('ai')}
+              >
+                <Wand2 className="w-4 h-4" /> Avaliação por IA
+              </button>
+            </>
+          )}
         </div>
 
         {activeTab === 'details' && (
@@ -384,8 +465,20 @@ export function CompanyDashboard() {
               </div>
             </div>
             
-            <AuthInput label="Localização" name="location" value={jobFormData.location} onChange={handleFormChange} placeholder="ex. São Paulo, Brasil" />
-            <AuthInput label="Data de Expiração" name="expiresAt" value={jobFormData.expiresAt} onChange={handleFormChange} type="date" />
+            <div className="grid grid-cols-2 gap-4">
+              <AuthInput label="Localização" name="location" value={jobFormData.location} onChange={handleFormChange} placeholder="ex. São Paulo, Brasil" />
+              {editingJobId ? (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[#5f6368] text-xs font-medium">Status</label>
+                  <select name="status" value={jobFormData.status} onChange={handleFormChange} className="w-full bg-transparent border border-[#dadce0] rounded-[4px] px-3.5 py-3 text-[#202124] text-sm outline-none focus:border-[#1a73e8] cursor-pointer">
+                    <option value="PUBLISHED">Ativa</option>
+                    <option value="CLOSED">Encerrada</option>
+                  </select>
+                </div>
+              ) : (
+                <AuthInput label="Data de Expiração" name="expiresAt" value={jobFormData.expiresAt} onChange={handleFormChange} type="date" />
+              )}
+            </div>
             
             <div className="flex flex-col gap-1.5">
               <label className="text-[#5f6368] text-xs font-medium">Descrição da Vaga</label>
@@ -567,6 +660,42 @@ export function CompanyDashboard() {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalJobId !== null}
+        onClose={() => !isDeleting && setDeleteModalJobId(null)}
+        title="Excluir Vaga"
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <AuthButton 
+              variant="secondary" 
+              onClick={() => setDeleteModalJobId(null)} 
+              disabled={isDeleting}
+            >
+              Cancelar
+            </AuthButton>
+            <AuthButton 
+              variant="primary" 
+              onClick={handleConfirmDelete} 
+              isLoading={isDeleting}
+              className="bg-[#d93025] hover:bg-[#b3261e] text-white border-transparent"
+            >
+              Excluir
+            </AuthButton>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[#202124] text-sm">
+            Tem certeza que deseja excluir esta vaga?
+          </p>
+          <p className="text-[#5f6368] text-sm">
+            Esta ação não pode ser desfeita e todos os candidatos associados também perderão o vínculo com a vaga.
+          </p>
+        </div>
       </Modal>
     </div>
   );

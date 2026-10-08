@@ -108,7 +108,7 @@ export function CandidateDashboard() {
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Presencial</span>
                   </div>
                 </div>
-                <span className="bg-[#f1f3f4] text-[#5f6368] text-xs font-medium px-2 py-1 rounded-full border border-[#dadce0]">
+                <span className="bg-[#fce8e6] text-[#c5221f] text-xs font-medium px-2 py-1 rounded-full border border-[#fad2cf]">
                   Encerrada
                 </span>
               </div>

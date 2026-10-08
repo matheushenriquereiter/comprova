@@ -13,6 +13,9 @@ export interface CandidateResponseDTO {
 export interface JobPostingResponseDTO {
   id: number;
   title: string;
+  description: string;
+  employmentType: string;
+  location: string;
   status: string;
   expiresAt: string;
   workplaceType: string;
@@ -98,5 +101,35 @@ export const JobService = {
     }
 
     return response.json();
+  },
+
+  async updateJobPosting(token: string, id: number, data: Partial<CreateJobPostingDTO> & { status?: string }): Promise<void> {
+    const response = await fetch(`/api/company/job-postings/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Falha ao atualizar vaga.");
+    }
+  },
+
+  async deleteJobPosting(token: string, id: number): Promise<void> {
+    const response = await fetch(`/api/company/job-postings/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw errorData || new Error("Falha ao deletar vaga.");
+    }
   }
 };

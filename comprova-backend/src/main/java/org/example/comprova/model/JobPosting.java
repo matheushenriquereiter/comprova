@@ -51,7 +51,7 @@ public class JobPosting {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private JobPostingStatus status = JobPostingStatus.DRAFT;
+    private JobPostingStatus status = JobPostingStatus.PUBLISHED;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

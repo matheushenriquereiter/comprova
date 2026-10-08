@@ -49,4 +49,23 @@ public class JobPostingController {
 
         return ResponseEntity.ok(candidateApplications);
     }
+
+    @PutMapping("/company/job-postings/{jobPostingId}")
+    public ResponseEntity<Void> updateJobPosting(
+            @AuthenticationPrincipal Company company,
+            @PathVariable Long jobPostingId,
+            @Valid @RequestBody org.example.comprova.dto.UpdateJobPostingDTO updateJobPostingDTO
+    ) {
+        jobPostingService.updateJobPosting(company, jobPostingId, updateJobPostingDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/company/job-postings/{jobPostingId}")
+    public ResponseEntity<Void> deleteJobPosting(
+            @AuthenticationPrincipal Company company,
+            @PathVariable Long jobPostingId
+    ) {
+        jobPostingService.deleteJobPosting(company, jobPostingId);
+        return ResponseEntity.ok().build();
+    }
 }
