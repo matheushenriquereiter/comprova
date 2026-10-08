@@ -60,7 +60,7 @@ export const JobService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Failed to fetch job postings.");
+      throw errorData || new Error("Falha ao buscar vagas.");
     }
 
     return response.json();
@@ -78,7 +78,7 @@ export const JobService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Failed to create job posting.");
+      throw errorData || new Error("Falha ao criar vaga.");
     }
   },
 
@@ -94,7 +94,7 @@ export const JobService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw errorData || new Error("Failed to generate questions.");
+      throw errorData || new Error("Falha ao gerar questões.");
     }
 
     return response.json();
