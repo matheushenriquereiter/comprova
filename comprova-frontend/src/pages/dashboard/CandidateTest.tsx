@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Code, FileText, CheckCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { type QuestionDTO } from '../../services/jobService';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export function CandidateTest() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,8 @@ export function CandidateTest() {
   
   // Minimal state to hold answers per question index
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -115,8 +119,8 @@ export function CandidateTest() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto min-h-[calc(100vh-8rem)] space-y-6">
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto h-[calc(100vh-6rem)] flex flex-col pt-6 pb-2">
+      <div className="mb-4 shrink-0">
         <Link to="/candidate/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-[#5f6368] hover:text-[#202124] mb-4">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Link>
@@ -133,62 +137,88 @@ export function CandidateTest() {
       </div>
 
       {error && (
-        <div className="p-4 bg-[#fce8e6] text-[#c5221f] rounded-[8px] text-sm border border-[#fad2cf]">
+        <div className="p-4 bg-[#fce8e6] text-[#c5221f] rounded-[8px] text-sm border border-[#fad2cf] shrink-0 mb-4">
           {error}
         </div>
       )}
 
-      {questions.map((q, idx) => (
-        <div key={idx} className="bg-white border border-[#dadce0] rounded-[8px] overflow-hidden">
-          <div className="bg-[#f8f9fa] border-b border-[#dadce0] px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center font-medium text-sm">
-                {idx + 1}
-              </span>
-              <span className="font-medium text-[#202124] flex items-center gap-2">
-                {q.type === 'PRACTICAL' ? <Code className="w-4 h-4 text-[#1a73e8]" /> : <FileText className="w-4 h-4 text-[#fbbc04]" />}
-                Questão {q.type === 'PRACTICAL' ? 'Prática' : 'Teórica'} ({q.skillEvaluated})
-              </span>
-            </div>
-            {q.estimatedTimeMinutes && (
-              <span className="text-xs text-[#5f6368] flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" /> ~{q.estimatedTimeMinutes} min
-              </span>
-            )}
-          </div>
-          <div className="p-6">
-            <div className="prose prose-sm max-w-none text-[#202124] mb-6">
-              <p className="whitespace-pre-wrap">{q.statement}</p>
-            </div>
-            
-            {q.codeSnippet && (
-              <div className="mb-6 bg-[#202124] text-[#f8f9fa] p-4 rounded-[4px] font-mono text-sm overflow-x-auto">
-                <pre>{q.codeSnippet}</pre>
+      {questions.length > 0 && (
+        <>
+          <div className="flex-1 min-h-0 bg-white border border-[#dadce0] rounded-[8px] overflow-hidden flex flex-col">
+            <div className="shrink-0 bg-[#f8f9fa] border-b border-[#dadce0] px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="w-auto px-3 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center font-medium text-sm">
+                  {currentQuestionIndex + 1} de {questions.length}
+                </span>
+                <span className="font-medium text-[#202124] flex items-center gap-2">
+                  {questions[currentQuestionIndex].type === 'PRACTICAL' ? <Code className="w-4 h-4 text-[#1a73e8]" /> : <FileText className="w-4 h-4 text-[#fbbc04]" />}
+                  Questão {questions[currentQuestionIndex].type === 'PRACTICAL' ? 'Prática' : 'Teórica'} ({questions[currentQuestionIndex].skillEvaluated})
+                </span>
               </div>
-            )}
+              {questions[currentQuestionIndex].estimatedTimeMinutes && (
+                <span className="text-xs text-[#5f6368] flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" /> ~{questions[currentQuestionIndex].estimatedTimeMinutes} min
+                </span>
+              )}
+            </div>
             
-            <div>
-              <label className="block text-sm font-medium text-[#202124] mb-2">Sua resposta:</label>
-              <textarea
-                className="w-full h-40 p-4 bg-white border border-[#dadce0] rounded-[4px] text-sm text-[#202124] font-mono outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] resize-y"
-                placeholder={q.type === 'PRACTICAL' ? "Escreva seu código aqui..." : "Escreva sua resposta conceitual aqui..."}
-                value={answers[idx] || ''}
-                onChange={(e) => handleAnswerChange(idx, e.target.value)}
-              />
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+              <div className="prose prose-sm max-w-none text-[#202124] mb-4 shrink-0">
+                <p className="whitespace-pre-wrap">{questions[currentQuestionIndex].statement}</p>
+              </div>
+              
+              {questions[currentQuestionIndex].codeSnippet && (
+                <div className="mb-4 shrink-0 rounded-[4px] overflow-hidden border border-[#dadce0] text-sm bg-[#1e1e1e]">
+                  <SyntaxHighlighter 
+                    language="javascript" 
+                    style={vscDarkPlus}
+                    customStyle={{ margin: 0, padding: '1rem', background: 'transparent' }}
+                  >
+                    {questions[currentQuestionIndex].codeSnippet}
+                  </SyntaxHighlighter>
+                </div>
+              )}
+              
+              <div className="flex-1 flex flex-col min-h-[150px]">
+                <label className="block text-sm font-medium text-[#202124] mb-2 shrink-0">Sua resposta:</label>
+                <textarea
+                  className="w-full flex-1 p-4 bg-white border border-[#dadce0] rounded-[4px] text-sm text-[#202124] font-mono outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] resize-none"
+                  placeholder={questions[currentQuestionIndex].type === 'PRACTICAL' ? "Escreva seu código aqui..." : "Escreva sua resposta conceitual aqui..."}
+                  value={answers[currentQuestionIndex] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestionIndex, e.target.value)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-      
-      <div className="flex justify-end pt-4 pb-12">
-        <button
-          onClick={handleSubmitTest}
-          disabled={submitting}
-          className="px-8 py-3 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium rounded-full shadow-md transition-colors disabled:opacity-70 flex items-center gap-2 cursor-pointer"
-        >
-          {submitting ? 'Enviando prova...' : 'Finalizar e Enviar Prova'}
-        </button>
-      </div>
+          
+          <div className="shrink-0 flex justify-between pt-4">
+            <button
+              onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+              disabled={currentQuestionIndex === 0}
+              className="px-6 py-2.5 border border-[#dadce0] bg-white hover:bg-[#f8f9fa] text-[#202124] font-medium rounded-full shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Anterior
+            </button>
+            
+            {currentQuestionIndex < questions.length - 1 ? (
+              <button
+                onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                className="px-6 py-2.5 bg-[#f8f9fa] border border-[#dadce0] hover:bg-[#e8eaed] text-[#202124] font-medium rounded-full shadow-sm transition-colors cursor-pointer"
+              >
+                Próxima
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmitTest}
+                disabled={submitting}
+                className="px-8 py-3 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium rounded-full shadow-md transition-colors disabled:opacity-70 flex items-center gap-2 cursor-pointer"
+              >
+                {submitting ? 'Enviando prova...' : 'Finalizar e Enviar Prova'}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

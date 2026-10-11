@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Bot, X, MessageSquare, Send } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
+import { type JobPostingResponseDTO } from '../../services/jobService';
 
 export function JobPostingCandidates() {
   const { id } = useParams<{ id: string }>();
@@ -16,21 +16,23 @@ export function JobPostingCandidates() {
   ]);
 
   useEffect(() => {
-    const fetchJobPosting = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token') || '';
-        const data = await JobService.getCompanyJobPostingById(token, Number(id));
-        setJobPosting(data);
-        setError('');
-      } catch (err: unknown) {
-        setError((err as Error).message || 'Erro ao carregar candidatos.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJobPosting();
+    setJobPosting({
+      id: Number(id),
+      title: 'Engenheiro de Software Sênior',
+      description: 'Vaga de teste',
+      workplaceType: 'REMOTE',
+      status: 'PUBLISHED',
+      expiresAt: '2026-12-31T23:59:59',
+      candidates: [
+        { id: 1, username: 'Ana Silva', email: 'ana.silva@email.com', score: 95, status: 'PASSED' },
+        { id: 2, username: 'Roberto Carlos', email: 'roberto.carlos@email.com', score: 82, status: 'PASSED' },
+        { id: 3, username: 'Carla Dias', email: 'carla.dias@email.com', score: 75, status: 'EVALUATING' },
+        { id: 4, username: 'João Silva', email: 'joao.silva@email.com', status: 'PENDING_TEST' },
+        { id: 5, username: 'Marcos Santos', email: 'marcos.santos@email.com', score: 35, status: 'FAILED' }
+      ]
+    } as unknown as JobPostingResponseDTO);
+    setLoading(false);
+    setError('');
   }, [id]);
 
 
@@ -121,7 +123,7 @@ export function JobPostingCandidates() {
                         <div className="flex items-center gap-2">
                           <div className="w-full bg-[#f1f3f4] rounded-full h-1.5 max-w-[100px]">
                             <div 
-                              className={`h-1.5 rounded-full ${candidate.score >= 80 ? 'bg-[#1a73e8]' : candidate.score >= 50 ? 'bg-[#fbbc04]' : 'bg-[#d93025]'}`}
+                              className={`h-1.5 rounded-full ${candidate.score >= 80 ? 'bg-[#1a73e8]' : candidate.score >= 50 ? 'bg-amber-400' : 'bg-red-400'}`}
                               style={{ width: `${candidate.score}%` }}
                             />
                           </div>
@@ -132,10 +134,10 @@ export function JobPostingCandidates() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      {candidate.status === 'PASSED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#137333]"><span className="w-2 h-2 rounded-full bg-[#137333]" /> Aprovado</span>}
-                      {candidate.status === 'FAILED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#c5221f]"><span className="w-2 h-2 rounded-full bg-[#c5221f]" /> Reprovado</span>}
+                      {candidate.status === 'PASSED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200">Aprovado</span>}
+                      {candidate.status === 'FAILED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200">Reprovado</span>}
                       {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Avaliação Concluída</span>}
-                      {candidate.status === 'PENDING_TEST' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#fbbc04] bg-opacity-20 text-[#d28a02] px-2 py-1 rounded-full border border-[#fbbc04]">Aguardando Teste</span>}
+                      {candidate.status === 'PENDING_TEST' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-700 px-2 py-1 rounded-full border border-amber-200">Aguardando Teste</span>}
                       {!candidate.status && <span className="text-xs text-[#5f6368]">Inscrito</span>}
                     </td>
                     <td className="px-6 py-4 text-right">
