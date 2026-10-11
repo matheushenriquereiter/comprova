@@ -86,25 +86,18 @@ export function Login() {
           required 
         />
         
-        <div className="space-y-1">
-          <AuthInput 
-            label="Senha" 
-            name="password" 
-            type="password" 
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-            disabled={isSubmitting}
-            autoComplete="current-password"
-            required 
-          />
-          <div className="flex justify-end pt-1">
-            <a href="#" className="text-sm font-medium text-[#1a73e8] hover:bg-[#f8f9fa] px-2 py-1 rounded transition-colors">
-              Esqueceu a senha?
-            </a>
-          </div>
-        </div>
+        <AuthInput 
+          label="Senha" 
+          name="password" 
+          type="password" 
+          placeholder="••••••••"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          disabled={isSubmitting}
+          autoComplete="current-password"
+          required 
+        />
 
         <div className="pt-2">
           <AuthButton type="submit" variant="primary" className="w-full" isLoading={isSubmitting}>

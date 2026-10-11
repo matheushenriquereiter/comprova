@@ -1,11 +1,20 @@
 import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import { useState, useEffect } from 'react';
-import { Briefcase, MapPin, Search, CheckCircle } from 'lucide-react';
+import { 
+  Briefcase, 
+  MapPin, 
+  Search, 
+  CheckCircle, 
+  Building, 
+  ArrowRight,
+  Calendar,
+  Sparkles
+} from 'lucide-react';
 import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 import { Modal } from '../../components/ui/Modal';
 import { AuthButton } from '../../components/ui/AuthButton';
 
-
+type WorkplaceFilter = 'ALL' | 'REMOTE' | 'HYBRID' | 'TRADITIONAL' | 'NOT_APPLIED';
 
 export function CandidateAvailableJobs() {
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
@@ -13,6 +22,7 @@ export function CandidateAvailableJobs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [workplaceFilter, setWorkplaceFilter] = useState<WorkplaceFilter>('ALL');
   const [applyingJobId, setApplyingJobId] = useState<number | null>(null);
   const [confirmModalJob, setConfirmModalJob] = useState<JobPostingResponseDTO | null>(null);
   
@@ -40,7 +50,6 @@ export function CandidateAvailableJobs() {
     fetchJobs();
   }, []);
 
-
   const handleApplyClick = (job: JobPostingResponseDTO) => {
     setConfirmModalJob(job);
   };
@@ -55,7 +64,7 @@ export function CandidateAvailableJobs() {
       setAppliedJobs(prev => new Set(prev).add(confirmModalJob.id));
       
       setConfirmModalJob(null);
-      setSuccessMessage(`Sua candidatura para a vaga "${confirmModalJob.title}" foi enviada com sucesso! Fique de olho no seu painel para realizar o teste técnico quando for liberado.`);
+      setSuccessMessage(`Sua candidatura para a vaga "${confirmModalJob.title}"${confirmModalJob.companyName ? ` na empresa ${confirmModalJob.companyName}` : ''} foi enviada com sucesso! Fique de olho no seu painel para realizar o teste técnico quando for liberado.`);
       setSuccessModalOpen(true);
     } catch (err: unknown) {
       window.alert((err as Error).message || 'Erro ao se candidatar.');
@@ -65,30 +74,119 @@ export function CandidateAvailableJobs() {
     }
   };
 
-  const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (job.description && job.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return null;
+    try {
+      const d = new Date(dateString);
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    } catch {
+      return null;
+    }
+  };
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = 
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (job.companyName && job.companyName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (job.description && job.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (job.skills && job.skills.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())));
+
+    if (!matchesSearch) return false;
+
+    if (workplaceFilter === 'REMOTE') {
+      return job.workplaceType === 'REMOTE';
+    }
+    if (workplaceFilter === 'HYBRID') {
+      return job.workplaceType === 'HYBRID';
+    }
+    if (workplaceFilter === 'TRADITIONAL') {
+      return job.workplaceType === 'TRADITIONAL';
+    }
+    if (workplaceFilter === 'NOT_APPLIED') {
+      return !appliedJobs.has(job.id);
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header and Search */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-medium text-[#202124]">Vagas Disponíveis</h1>
-          <p className="text-sm text-[#5f6368] mt-1">Encontre e aplique para as melhores oportunidades.</p>
+          <p className="text-sm text-[#5f6368] mt-1">
+            Encontre oportunidades abertas com avaliação técnica transparente e dinâmica por IA.
+          </p>
         </div>
         
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5f6368]" />
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5f6368]" />
           <input 
             type="text" 
-            placeholder="Buscar vagas..." 
+            placeholder="Buscar por cargo, empresa ou skill..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white border border-[#dadce0] rounded-full pl-10 pr-4 py-2 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-all"
           />
         </div>
+      </div>
+
+      {/* Quick Filter Chips (LinkedIn style) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setWorkplaceFilter('ALL')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+            workplaceFilter === 'ALL'
+              ? 'bg-[#1a73e8] text-white shadow-xs'
+              : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
+          }`}
+        >
+          Todas ({jobs.length})
+        </button>
+
+        <button
+          onClick={() => setWorkplaceFilter('REMOTE')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+            workplaceFilter === 'REMOTE'
+              ? 'bg-[#1a73e8] text-white shadow-xs'
+              : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
+          }`}
+        >
+          Remoto ({jobs.filter(j => j.workplaceType === 'REMOTE').length})
+        </button>
+
+        <button
+          onClick={() => setWorkplaceFilter('HYBRID')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+            workplaceFilter === 'HYBRID'
+              ? 'bg-[#1a73e8] text-white shadow-xs'
+              : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
+          }`}
+        >
+          Híbrido ({jobs.filter(j => j.workplaceType === 'HYBRID').length})
+        </button>
+
+        <button
+          onClick={() => setWorkplaceFilter('TRADITIONAL')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+            workplaceFilter === 'TRADITIONAL'
+              ? 'bg-[#1a73e8] text-white shadow-xs'
+              : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
+          }`}
+        >
+          Presencial ({jobs.filter(j => j.workplaceType === 'TRADITIONAL').length})
+        </button>
+
+        <button
+          onClick={() => setWorkplaceFilter('NOT_APPLIED')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+            workplaceFilter === 'NOT_APPLIED'
+              ? 'bg-[#1a73e8] text-white shadow-xs'
+              : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
+          }`}
+        >
+          Não Inscrito ({jobs.filter(j => !appliedJobs.has(j.id)).length})
+        </button>
       </div>
 
       {error && (
@@ -98,71 +196,144 @@ export function CandidateAvailableJobs() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-[#5f6368]">Carregando vagas...</div>
+        <div className="text-center py-16 text-[#5f6368] flex items-center justify-center gap-2">
+          <div className="w-5 h-5 border-2 border-[#1a73e8] border-t-transparent rounded-full animate-spin" />
+          Carregando vagas disponíveis...
+        </div>
       ) : filteredJobs.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-[#dadce0] rounded-[8px]">
+        <div className="text-center py-16 bg-white border border-[#dadce0] rounded-[8px]">
           <Briefcase className="w-12 h-12 text-[#dadce0] mx-auto mb-3" />
           <h3 className="text-base font-medium text-[#202124]">Nenhuma vaga encontrada</h3>
           <p className="text-sm text-[#5f6368] mt-1">
-            {searchTerm ? 'Tente buscar com outros termos.' : 'No momento não há novas vagas disponíveis.'}
+            {searchTerm ? 'Tente buscar com outros termos ou filtros.' : 'No momento não há novas vagas disponíveis para esta categoria.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-3.5">
           {filteredJobs.map(job => {
             const hasApplied = appliedJobs.has(job.id);
             const isApplying = applyingJobId === job.id;
-            
+            const companyInitial = job.companyName ? job.companyName.trim().charAt(0).toUpperCase() : null;
+            const expirationFormatted = formatDate(job.expiresAt);
+
             return (
-              <div key={job.id} className="bg-white border border-[#dadce0] rounded-[8px] p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                <div className="flex-1">
-                  <h3 className="text-base font-medium text-[#202124] line-clamp-2">{job.title}</h3>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-[#5f6368] flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" /> 
-                      {WORKPLACE_MAP[job.workplaceType] || job.workplaceType}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Briefcase className="w-3.5 h-3.5" /> 
-                      {EMPLOYMENT_MAP[job.employmentType] || job.employmentType}
-                    </span>
+              <div 
+                key={job.id} 
+                className="bg-white border border-[#dadce0] rounded-[8px] p-5 hover:border-[#80868b] transition-all shadow-xs hover:shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 group"
+              >
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  {/* LinkedIn-Style Company Avatar */}
+                  <div className="w-12 h-12 rounded-[6px] bg-[#f8f9fa] border border-[#dadce0] flex items-center justify-center shrink-0 shadow-xs">
+                    {companyInitial ? (
+                      <span className="text-lg font-bold text-[#1a73e8]">
+                        {companyInitial}
+                      </span>
+                    ) : (
+                      <Building className="w-6 h-6 text-[#5f6368]" />
+                    )}
                   </div>
-                  {job.location && (
-                    <p className="text-xs text-[#5f6368] mt-1">{job.location}</p>
-                  )}
-                  
-                  <div className="mt-4 pt-4 border-t border-[#f1f3f4]">
-                    <p className="text-sm text-[#5f6368] line-clamp-3">
-                      {job.description}
-                    </p>
-                  </div>
-                  
-                  {job.skills && job.skills.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {job.skills.map(skill => (
-                        <span key={skill.name} className="px-2 py-0.5 bg-[#f8f9fa] border border-[#dadce0] text-[#5f6368] rounded-full text-[10px] font-medium">
-                          {skill.name}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-semibold text-[#202124] group-hover:text-[#1a73e8] transition-colors truncate">
+                        {job.title}
+                      </h3>
+                      {hasApplied && (
+                        <span className="shrink-0 text-[11px] font-semibold text-[#137333] bg-[#e6f4ea] border border-[#ceead6] px-2.5 py-0.5 rounded-full">
+                          Inscrito
                         </span>
-                      ))}
+                      )}
                     </div>
-                  )}
+
+                    <p className="text-sm font-medium text-[#202124] mt-0.5 truncate flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5 text-[#80868b] shrink-0" />
+                      <span>{job.companyName || 'Empresa Confidencial'}</span>
+                    </p>
+
+                    {/* Metadata Row (Workplace · Employment · Location · Expiration) */}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-[#5f6368] flex-wrap">
+                      <span>{WORKPLACE_MAP[job.workplaceType] || job.workplaceType}</span>
+                      
+                      {job.employmentType && (
+                        <>
+                          <span className="text-[#dadce0]">•</span>
+                          <span>{EMPLOYMENT_MAP[job.employmentType] || job.employmentType}</span>
+                        </>
+                      )}
+                      
+                      {job.location && (
+                        <>
+                          <span className="text-[#dadce0]">•</span>
+                          <span className="flex items-center gap-0.5">
+                            <MapPin className="w-3 h-3 text-[#5f6368]" />
+                            {job.location}
+                          </span>
+                        </>
+                      )}
+
+                      {expirationFormatted && (
+                        <>
+                          <span className="text-[#dadce0]">•</span>
+                          <span className="flex items-center gap-1 text-[#80868b]">
+                            <Calendar className="w-3 h-3" />
+                            Até {expirationFormatted}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Description Preview */}
+                    {job.description && (
+                      <p className="text-xs text-[#5f6368] mt-2.5 line-clamp-2 leading-relaxed max-w-3xl">
+                        {job.description}
+                      </p>
+                    )}
+
+                    {/* Required Skills Badges */}
+                    {job.skills && job.skills.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {job.skills.slice(0, 5).map(skill => (
+                          <span 
+                            key={skill.name} 
+                            className="px-2.5 py-0.5 bg-[#f1f3f4] border border-[#dadce0]/60 text-[#202124] rounded-md text-[11px] font-medium"
+                          >
+                            {skill.name}
+                          </span>
+                        ))}
+                        {job.skills.length > 5 && (
+                          <span className="px-2 py-0.5 bg-[#f8f9fa] text-[#5f6368] rounded-md text-[11px] font-medium">
+                            +{job.skills.length - 5} mais
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="mt-6 pt-4 border-t border-[#f1f3f4]">
+
+                {/* Right Action / CTA Area */}
+                <div className="w-full sm:w-auto shrink-0 flex items-center justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4]">
                   {hasApplied ? (
-                    <div className="w-full py-2 bg-[#e6f4ea] text-[#137333] text-sm font-medium rounded-[4px] flex items-center justify-center gap-1.5">
-                      <CheckCircle className="w-4 h-4" /> Inscrito
-                    </div>
+                    <span className="w-full sm:w-auto px-5 py-2 bg-[#e6f4ea] text-[#137333] border border-[#ceead6] text-xs font-semibold rounded-full flex items-center justify-center shadow-xs">
+                      Inscrito
+                    </span>
                   ) : (
                     <button
                       onClick={() => handleApplyClick(job)}
                       disabled={isApplying}
-                      className="w-full py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-medium rounded-[4px] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold rounded-full transition-all shadow-xs hover:shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      {isApplying ? 'Inscrevendo...' : 'Candidatar-se'}
+                      {isApplying ? (
+                        <>Inscrevendo...</>
+                      ) : (
+                        <>
+                          Candidatar-se
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
+
               </div>
             );
           })}
@@ -173,7 +344,7 @@ export function CandidateAvailableJobs() {
       <Modal
         isOpen={confirmModalJob !== null}
         onClose={() => !applyingJobId && setConfirmModalJob(null)}
-        title="Confirmar Inscrição"
+        title="Confirmar Candidatura"
         maxWidth="max-w-md"
         footer={
           <>
@@ -189,18 +360,40 @@ export function CandidateAvailableJobs() {
               onClick={handleConfirmApply} 
               isLoading={applyingJobId !== null}
             >
-              Confirmar
+              Confirmar Inscrição
             </AuthButton>
           </>
         }
       >
-        <div className="space-y-3">
-          <p className="text-[#202124] text-sm">
-            Tem certeza que deseja se inscrever para a vaga de <strong>{confirmModalJob?.title}</strong>?
-          </p>
-          <p className="text-[#5f6368] text-sm">
-            Ao confirmar, a empresa terá acesso ao seu perfil e você será notificado quando o teste técnico estiver disponível.
-          </p>
+        <div className="space-y-4">
+          {confirmModalJob && (
+            <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-[8px] p-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-[6px] bg-white border border-[#dadce0] flex items-center justify-center shrink-0 font-bold text-[#1a73e8] text-base shadow-xs">
+                {confirmModalJob.companyName ? confirmModalJob.companyName.trim().charAt(0).toUpperCase() : 'E'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold text-[#202124] truncate">{confirmModalJob.title}</h4>
+                <p className="text-xs text-[#5f6368] mt-0.5">{confirmModalJob.companyName || 'Empresa Confidencial'}</p>
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-[#80868b]">
+                  <span>{WORKPLACE_MAP[confirmModalJob.workplaceType] || confirmModalJob.workplaceType}</span>
+                  <span>•</span>
+                  <span>{EMPLOYMENT_MAP[confirmModalJob.employmentType] || confirmModalJob.employmentType}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2 text-sm text-[#5f6368]">
+            <p>
+              Ao confirmar sua inscrição, a empresa receberá seus dados de contato e seu perfil profissional.
+            </p>
+            <div className="flex items-start gap-2 p-3 bg-[#e8f0fe] border border-[#d2e3fc] rounded-[6px] text-xs text-[#1a73e8]">
+              <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Esta vaga conta com <strong>avaliação técnica dinâmica por IA</strong>. Você poderá realizar o teste no seu painel assim que liberado.
+              </span>
+            </div>
+          </div>
         </div>
       </Modal>
 
@@ -208,22 +401,22 @@ export function CandidateAvailableJobs() {
       <Modal
         isOpen={successModalOpen}
         onClose={() => setSuccessModalOpen(false)}
-        title="Sucesso!"
+        title="Candidatura Enviada!"
         maxWidth="max-w-md"
         footer={
           <AuthButton 
             variant="primary" 
             onClick={() => setSuccessModalOpen(false)} 
           >
-            Entendi
+            Entendido
           </AuthButton>
         }
       >
         <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center">
-          <div className="w-16 h-16 bg-[#e6f4ea] rounded-full flex items-center justify-center mb-2">
+          <div className="w-16 h-16 bg-[#e6f4ea] rounded-full flex items-center justify-center mb-2 shadow-xs">
             <CheckCircle className="w-8 h-8 text-[#137333]" />
           </div>
-          <p className="text-[#202124] text-sm leading-relaxed">
+          <p className="text-[#202124] text-sm leading-relaxed max-w-sm">
             {successMessage}
           </p>
         </div>

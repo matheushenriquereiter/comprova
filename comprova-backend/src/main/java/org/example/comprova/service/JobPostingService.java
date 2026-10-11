@@ -148,15 +148,17 @@ public class JobPostingService {
             throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
         }
 
-        return app.getJobPosting().getQuestions().stream().map(q -> new QuestionDTO(
-                q.getStatement(),
-                q.getType(),
-                q.getSkillEvaluated(),
-                q.getEstimatedTimeMinutes(),
-                null,
-                q.getCodeSnippet(),
-                q.getEvaluationCriteria()
-        )).toList();
+        return app.getJobPosting().getQuestions().stream()
+                .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .map(q -> new QuestionDTO(
+                        q.getStatement(),
+                        q.getType(),
+                        q.getSkillEvaluated(),
+                        q.getEstimatedTimeMinutes(),
+                        null,
+                        q.getCodeSnippet(),
+                        q.getEvaluationCriteria()
+                )).toList();
     }
 
     @Transactional
@@ -169,17 +171,34 @@ public class JobPostingService {
         }
 
         app.setStatus(ApplicationStatus.EVALUATING);
-        if (submitTestDTO.answers() != null) {
-            submitTestDTO.answers().forEach((idx, text) -> {
-                // Just pick the question by index from the list since the frontend sends it as idx
-                java.util.List<Question> questions = app.getJobPosting().getQuestions().stream().toList();
-                if (idx < questions.size()) {
-                    Answer answer = new Answer(app, questions.get(idx.intValue()), text);
-                    answerRepository.save(answer);
-                }
-            });
+        jobApplicationRepository.saveAndFlush(app);
+
+        // Delete any existing answers for this application to avoid duplicates
+        List<Answer> existingAnswers = answerRepository.findAllByJobApplication(app);
+        if (!existingAnswers.isEmpty()) {
+            answerRepository.deleteAll(existingAnswers);
+            answerRepository.flush();
         }
-        jobApplicationRepository.save(app);
+
+        List<Question> questions = app.getJobPosting().getQuestions().stream()
+                .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .toList();
+
+        // Ensure an Answer is saved for EVERY question in the test
+        for (int i = 0; i < questions.size(); i++) {
+            Question question = questions.get(i);
+            String responseText = "";
+            if (submitTestDTO != null && submitTestDTO.answers() != null) {
+                String text = submitTestDTO.answers().get((long) i);
+                if (text != null) {
+                    responseText = text.trim();
+                }
+            }
+            Answer answer = new Answer(app, question, responseText);
+            answerRepository.save(answer);
+        }
+        answerRepository.flush();
+
         return aiEvaluationService.evaluateApplicationTestSync(app);
     }
 

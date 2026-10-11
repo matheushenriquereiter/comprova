@@ -15,6 +15,7 @@ export interface CandidateResponseDTO {
 export interface JobPostingResponseDTO {
   id: number;
   title: string;
+  companyName?: string;
   description: string;
   employmentType: string;
   location: string;
