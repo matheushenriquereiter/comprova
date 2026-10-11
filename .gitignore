@@ -1,7 +1,46 @@
-# IntelliJ (configuração local de cada um)
-.idea/
-*.iml
+# Temporary scripts, patches and dumps (AI agent scratch scripts)
+*.sh
+!mvnw
+*.patch
+*.diff
+sources.txt
+*.tmp
+*.temp
 
-# Sistema operacional
+# OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+
+# IDE and Editors
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Java / Maven / Spring Boot
+target/
+*.class
+*.jar
+*.war
+out/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+
+# Environment / Secrets
+.env
+*.env
+application-local.properties
+application-local.yml

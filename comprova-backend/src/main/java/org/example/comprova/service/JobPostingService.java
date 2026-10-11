@@ -18,8 +18,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -188,21 +186,25 @@ public class JobPostingService {
         }
 
         app.setStatus(ApplicationStatus.EVALUATING);
+        jobApplicationRepository.saveAndFlush(app);
 
-        if (submitTestDTO != null && submitTestDTO.answers() != null) {
-            // As respostas chegam como { idDaQuestao: texto }.
-            Map<Long, Question> questionsById = app.getJobPosting().getQuestions().stream()
-                    .collect(Collectors.toMap(Question::getId, Function.identity()));
+        // As respostas chegam como { idDaQuestao: texto }.
+        Map<Long, String> answersById = (submitTestDTO != null && submitTestDTO.answers() != null)
+                ? submitTestDTO.answers()
+                : Map.of();
 
-            submitTestDTO.answers().forEach((questionId, text) -> {
-                Question question = questionsById.get(questionId);
-                if (question != null) {
-                    answerRepository.save(new Answer(app, question, text));
-                }
-            });
+        List<Question> questions = app.getJobPosting().getQuestions().stream()
+                .sorted(Comparator.comparing(Question::getId))
+                .toList();
+
+        // Salva uma resposta para CADA questão da prova (em branco se o candidato não respondeu),
+        // assim a nota final é dividida pelo total de questões.
+        for (Question question : questions) {
+            String text = answersById.get(question.getId());
+            answerRepository.save(new Answer(app, question, text == null ? "" : text.trim()));
         }
+        answerRepository.flush();
 
-        jobApplicationRepository.save(app);
         return aiEvaluationService.evaluateApplicationTestSync(app);
     }
 

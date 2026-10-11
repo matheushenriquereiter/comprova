@@ -59,7 +59,12 @@ export function CandidateTest() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token') || '';
-      const responseData = await JobService.submitCandidateTest(token, Number(id), answers);
+      // Envia uma resposta para cada questão (em branco se não respondida), pelo id da questão
+      const allAnswers: Record<number, string> = {};
+      questions.forEach(q => {
+        allAnswers[q.id] = answers[q.id] ? answers[q.id].trim() : '';
+      });
+      const responseData = await JobService.submitCandidateTest(token, Number(id), allAnswers);
       setScore(responseData.score);
       setSuccess(true);
     } catch (err: unknown) {
