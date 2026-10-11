@@ -1,2 +1,0 @@
-sed -i 's/ApplicationStatus status,/ApplicationStatus status,\n        org.example.comprova.enums.JobPostingStatus jobPostingStatus,/g' comprova-backend/src/main/java/org/example/comprova/dto/CandidateApplicationDTO.java
-sed -i 's/app.getStatus(),/app.getStatus(),\n                        app.getJobPosting().getStatus(),/g' comprova-backend/src/main/java/org/example/comprova/service/JobPostingService.java

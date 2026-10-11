@@ -15,9 +15,12 @@ export function AuthLayout() {
           style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }}
         />
         
-        <div className="relative z-10">
+        <Link to="/login" className="relative z-10 flex items-center gap-3.5 w-fit focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded-lg">
+          <div className="w-11 h-11 bg-white rounded-lg p-1 flex items-center justify-center shadow-sm shrink-0">
+            <img src="/logo-comprova.jpg" alt="Logo ComProva" className="w-full h-full object-contain" />
+          </div>
           <div className="text-3xl font-medium text-white tracking-tight">ComProva</div>
-        </div>
+        </Link>
 
         <div className="relative z-10 max-w-md">
           <h2 className="text-4xl font-normal text-white leading-tight mb-6">
@@ -37,9 +40,12 @@ export function AuthLayout() {
       <div className="w-full lg:w-7/12 flex flex-col justify-center px-6 sm:px-16 md:px-24 relative bg-white">
         
         {/* Mobile Header */}
-        <div className="lg:hidden mb-12 mt-8">
+        <Link to="/login" className="lg:hidden mb-12 mt-8 flex items-center gap-2.5 w-fit focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]/30 rounded-md">
+          <div className="w-9 h-9 rounded-md bg-white flex items-center justify-center p-0.5 border border-[#dadce0]/70 shadow-xs shrink-0">
+            <img src="/logo-comprova.jpg" alt="Logo ComProva" className="w-full h-full object-contain" />
+          </div>
           <div className="text-2xl font-medium text-[#1a73e8] tracking-tight">ComProva</div>
-        </div>
+        </Link>
 
         <div className="w-full max-w-[420px] mx-auto">
           {/* Dynamic Header */}
