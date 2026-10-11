@@ -1,0 +1,7 @@
+# IntelliJ (configuração local de cada um)
+.idea/
+*.iml
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

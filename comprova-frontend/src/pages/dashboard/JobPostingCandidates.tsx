@@ -136,7 +136,7 @@ export function JobPostingCandidates() {
                     <td className="px-6 py-4">
                       {candidate.status === 'PASSED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200">Aprovado</span>}
                       {candidate.status === 'FAILED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200">Reprovado</span>}
-                      {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Avaliação Concluída</span>}
+                      {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Em Avaliação</span>}
                       {candidate.status === 'PENDING_TEST' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-700 px-2 py-1 rounded-full border border-amber-200">Aguardando Teste</span>}
                       {!candidate.status && <span className="text-xs text-[#5f6368]">Inscrito</span>}
                     </td>

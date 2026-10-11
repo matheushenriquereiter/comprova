@@ -31,9 +31,19 @@ export function CompanyDashboard() {
     }
   }, []);
 
+  // Carga inicial: o setState fica dentro do .then (regra react-hooks/set-state-in-effect)
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    let active = true;
+    const token = localStorage.getItem('token') || '';
+    JobService.getCompanyJobPostings(token)
+      .then(page => {
+        if (active) setJobs(page.content);
+      })
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   // Form States
@@ -86,6 +96,10 @@ export function CompanyDashboard() {
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
     const weight = parseInt(newSkillWeight) || 0;
+    if (weight < 1 || weight > 100) {
+      setServerError('O peso de cada habilidade deve estar entre 1 e 100.');
+      return;
+    }
     if (currentWeightSum + weight > 100) {
       setServerError(`O peso total não pode ultrapassar 100. Você tentou adicionar ${weight} a ${currentWeightSum}.`);
       return;
@@ -172,7 +186,8 @@ export function CompanyDashboard() {
           workplaceType: jobFormData.workplaceType,
           employmentType: jobFormData.employmentType,
           location: jobFormData.location,
-          status: jobFormData.status
+          status: jobFormData.status,
+          expiresAt: expiresDate
         });
       } else {
         const payload: CreateJobPostingDTO = {

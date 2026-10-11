@@ -50,7 +50,7 @@ export function Login() {
       const token = await AuthService.signIn(formData.email, formData.password);
       localStorage.setItem('token', token);
       
-      const userData = await AuthService.getMe(token);
+      const userData = await AuthService.getMe();
       if (userData.role === 'ROLE_COMPANY') {
         navigate('/company/dashboard');
       } else {

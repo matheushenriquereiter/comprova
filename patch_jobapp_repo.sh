@@ -1,1 +1,0 @@
-sed -i '/public interface JobApplicationRepository/a \    org.springframework.data.domain.Page<JobApplication> findAllByCandidateOrderByIdDesc(\n            Candidate candidate,\n            org.springframework.data.domain.Pageable pageable\n    );\n' comprova-backend/src/main/java/org/example/comprova/repository/JobApplicationRepository.java

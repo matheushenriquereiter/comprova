@@ -1,5 +1,6 @@
 import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import { useState, useEffect } from 'react';
+import { getErrorMessage } from '../../utils/apiErrors';
 import { Briefcase, MapPin, Search, CheckCircle } from 'lucide-react';
 import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 import { Modal } from '../../components/ui/Modal';
@@ -58,7 +59,7 @@ export function CandidateAvailableJobs() {
       setSuccessMessage(`Sua candidatura para a vaga "${confirmModalJob.title}" foi enviada com sucesso! Fique de olho no seu painel para realizar o teste técnico quando for liberado.`);
       setSuccessModalOpen(true);
     } catch (err: unknown) {
-      window.alert((err as Error).message || 'Erro ao se candidatar.');
+      window.alert(getErrorMessage(err, 'Erro ao se candidatar.'));
       setConfirmModalJob(null);
     } finally {
       setApplyingJobId(null);

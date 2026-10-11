@@ -42,7 +42,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/generate-questions", "/ws", "/css/**", "/js/**", "/auth/sign-up/**", "/auth/sign-in").permitAll()
+                        .requestMatchers("/ws", "/css/**", "/js/**", "/auth/sign-up/**", "/auth/sign-in").permitAll()
+                        // Gerar questões chama a IA (custo na chave do Gemini): só empresas logadas.
+                        .requestMatchers("/generate-questions").hasRole("COMPANY")
                         .requestMatchers("/auth/me").authenticated()
                         .requestMatchers("/company/**").hasRole("COMPANY")
                         .requestMatchers("/candidate/**").hasRole("CANDIDATE")

@@ -2,21 +2,22 @@ import { JobService } from "../../services/jobService";
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Code, FileText, CheckCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { type QuestionDTO } from '../../services/jobService';
+import { type CandidateQuestionDTO } from '../../services/jobService';
+import { getErrorMessage } from '../../utils/apiErrors';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export function CandidateTest() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState<QuestionDTO[]>([]);
+  const [questions, setQuestions] = useState<CandidateQuestionDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   
-  // Minimal state to hold answers per question index
+  // Respostas por id da questão: { idDaQuestao: texto }
   const [answers, setAnswers] = useState<Record<number, string>>({});
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -31,7 +32,7 @@ export function CandidateTest() {
         setQuestions(data);
         setError('');
       } catch (err: unknown) {
-        setError((err as Error).message || 'Erro ao carregar a prova.');
+        setError(getErrorMessage(err, 'Erro ao carregar a prova.'));
       } finally {
         setLoading(false);
       }
@@ -40,15 +41,16 @@ export function CandidateTest() {
   }, [id]);
 
 
-  const handleAnswerChange = (idx: number, value: string) => {
-    setAnswers(prev => ({ ...prev, [idx]: value }));
+  const handleAnswerChange = (questionId: number, value: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const handleSubmitTest = async () => {
     if (!id) return;
     
     // Check if all questions have answers
-    if (Object.keys(answers).length < questions.length) {
+    const answeredCount = questions.filter(q => answers[q.id]?.trim()).length;
+    if (answeredCount < questions.length) {
       if (!window.confirm("Você deixou algumas questões em branco. Tem certeza que deseja enviar?")) {
         return;
       }
@@ -61,7 +63,7 @@ export function CandidateTest() {
       setScore(responseData.score);
       setSuccess(true);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Erro ao enviar a prova.');
+      setError(getErrorMessage(err, 'Erro ao enviar a prova.'));
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +157,7 @@ export function CandidateTest() {
                   Questão {questions[currentQuestionIndex].type === 'PRACTICAL' ? 'Prática' : 'Teórica'} ({questions[currentQuestionIndex].skillEvaluated})
                 </span>
               </div>
-              {questions[currentQuestionIndex].estimatedTimeMinutes && (
+              {!!questions[currentQuestionIndex].estimatedTimeMinutes && (
                 <span className="text-xs text-[#5f6368] flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> ~{questions[currentQuestionIndex].estimatedTimeMinutes} min
                 </span>
@@ -184,8 +186,8 @@ export function CandidateTest() {
                 <textarea
                   className="w-full flex-1 p-4 bg-white border border-[#dadce0] rounded-[4px] text-sm text-[#202124] font-mono outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] resize-none"
                   placeholder={questions[currentQuestionIndex].type === 'PRACTICAL' ? "Escreva seu código aqui..." : "Escreva sua resposta conceitual aqui..."}
-                  value={answers[currentQuestionIndex] || ''}
-                  onChange={(e) => handleAnswerChange(currentQuestionIndex, e.target.value)}
+                  value={answers[questions[currentQuestionIndex].id] || ''}
+                  onChange={(e) => handleAnswerChange(questions[currentQuestionIndex].id, e.target.value)}
                 />
               </div>
             </div>

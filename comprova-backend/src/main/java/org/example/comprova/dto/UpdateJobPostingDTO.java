@@ -7,6 +7,8 @@ import org.example.comprova.enums.EmploymentType;
 import org.example.comprova.enums.WorkplaceType;
 import org.example.comprova.enums.JobPostingStatus;
 
+import java.time.LocalDateTime;
+
 public record UpdateJobPostingDTO(
         @NotBlank(message = "Job title cannot be null or empty.")
         @Size(min = 5, max = 100, message = "Job title must be between 5 and 100 characters.")
@@ -27,6 +29,8 @@ public record UpdateJobPostingDTO(
         String location,
 
         @NotNull(message = "Status cannot be null.")
-        JobPostingStatus status
+        JobPostingStatus status,
+        @NotNull(message = "Expiration date cannot be null.")
+        LocalDateTime expiresAt
 ) {
 }
