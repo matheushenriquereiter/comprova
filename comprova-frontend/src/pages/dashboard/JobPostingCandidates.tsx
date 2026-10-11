@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Bot, X, MessageSquare, Send } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { type JobPostingResponseDTO } from '../../services/jobService';
+import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 
 export function JobPostingCandidates() {
   const { id } = useParams<{ id: string }>();
@@ -16,23 +16,29 @@ export function JobPostingCandidates() {
   ]);
 
   useEffect(() => {
-    setJobPosting({
-      id: Number(id),
-      title: 'Engenheiro de Software Sênior',
-      description: 'Vaga de teste',
-      workplaceType: 'REMOTE',
-      status: 'PUBLISHED',
-      expiresAt: '2026-12-31T23:59:59',
-      candidates: [
-        { id: 1, username: 'Ana Silva', email: 'ana.silva@email.com', score: 95, status: 'PASSED' },
-        { id: 2, username: 'Roberto Carlos', email: 'roberto.carlos@email.com', score: 82, status: 'PASSED' },
-        { id: 3, username: 'Carla Dias', email: 'carla.dias@email.com', score: 75, status: 'EVALUATING' },
-        { id: 4, username: 'João Silva', email: 'joao.silva@email.com', status: 'PENDING_TEST' },
-        { id: 5, username: 'Marcos Santos', email: 'marcos.santos@email.com', score: 35, status: 'FAILED' }
-      ]
-    } as unknown as JobPostingResponseDTO);
-    setLoading(false);
-    setError('');
+    if (!id) return;
+    let active = true;
+    const token = localStorage.getItem('token') || '';
+
+    // Busca a vaga real (com os candidatos inscritos) no backend.
+    // O setState fica dentro do .then (regra react-hooks/set-state-in-effect).
+    JobService.getCompanyJobPostingById(token, Number(id))
+      .then(data => {
+        if (!active) return;
+        setJobPosting(data);
+        setError('');
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setError((err as Error).message || 'Erro ao carregar candidatos.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
 
