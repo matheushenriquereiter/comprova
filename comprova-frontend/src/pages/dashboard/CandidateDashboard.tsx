@@ -133,84 +133,29 @@ export function CandidateDashboard() {
           </p>
         </div>
         
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5f6368]" />
-          <input 
-            type="text" 
-            placeholder="Buscar por cargo ou empresa..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-[#dadce0] rounded-full pl-10 pr-4 py-2 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-all"
-          />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <Link 
+            to="/candidate/jobs"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-[#1a73e8] text-[#1a73e8] hover:bg-[#e8f0fe] text-xs font-semibold rounded-full transition-colors shadow-xs shrink-0 cursor-pointer"
+          >
+            <Search className="w-3.5 h-3.5" />
+            Explorar Novas Vagas
+          </Link>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5f6368]" />
+            <input 
+              type="text" 
+              placeholder="Buscar por cargo ou empresa..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-[#dadce0] rounded-full pl-10 pr-4 py-2 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-all"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        {/* Left Sidebar: LinkedIn-style summary widget */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white border border-[#dadce0] rounded-[8px] p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-[#202124] mb-3 pb-2 border-b border-[#f1f3f4]">
-              Resumo de Candidaturas
-            </h2>
-            
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setStatusFilter('ALL')}
-                className={`w-full flex justify-between items-center p-2 rounded-[6px] transition-colors text-left ${
-                  statusFilter === 'ALL' ? 'bg-[#e8f0fe] text-[#1a73e8]' : 'hover:bg-[#f8f9fa] text-[#5f6368]'
-                }`}
-              >
-                <span className="text-sm flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" /> Total de Vagas
-                </span>
-                <span className="text-sm font-semibold text-[#202124]">{applications.length}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatusFilter('PENDING')}
-                className={`w-full flex justify-between items-center p-2 rounded-[6px] transition-colors text-left ${
-                  statusFilter === 'PENDING' ? 'bg-[#fef7e0] text-[#b06000]' : 'hover:bg-[#f8f9fa] text-[#5f6368]'
-                }`}
-              >
-                <span className="text-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#f2994a]" /> Testes Pendentes
-                </span>
-                <span className={`text-sm font-semibold ${pendingCount > 0 ? 'text-[#d93025]' : 'text-[#202124]'}`}>
-                  {pendingCount}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStatusFilter('DONE')}
-                className={`w-full flex justify-between items-center p-2 rounded-[6px] transition-colors text-left ${
-                  statusFilter === 'DONE' ? 'bg-[#e6f4ea] text-[#137333]' : 'hover:bg-[#f8f9fa] text-[#5f6368]'
-                }`}
-              >
-                <span className="text-sm flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#137333]" /> Concluídas
-                </span>
-                <span className="text-sm font-semibold text-[#202124]">{doneCount}</span>
-              </button>
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-[#f1f3f4]">
-              <Link 
-                to="/candidate/jobs"
-                className="w-full py-2.5 px-4 bg-white border border-[#1a73e8] text-[#1a73e8] hover:bg-[#e8f0fe] text-xs font-medium rounded-full transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <Search className="w-3.5 h-3.5" />
-                Explorar Novas Vagas
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Main Column: LinkedIn-style Job Cards Feed */}
-        <div className="lg:col-span-3 space-y-4">
+      {/* Main Feed: LinkedIn-style Job Cards */}
+      <div className="space-y-4">
           
           {/* Quick Filter Chips (LinkedIn style) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -415,6 +360,5 @@ export function CandidateDashboard() {
 
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

@@ -1,14 +1,14 @@
 import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, 
   MapPin, 
   Search, 
-  CheckCircle, 
+  Check, 
   Building, 
   ArrowRight,
-  Calendar,
-  Sparkles
+  Calendar
 } from 'lucide-react';
 import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 import { Modal } from '../../components/ui/Modal';
@@ -17,6 +17,7 @@ import { AuthButton } from '../../components/ui/AuthButton';
 type WorkplaceFilter = 'ALL' | 'REMOTE' | 'HYBRID' | 'TRADITIONAL' | 'NOT_APPLIED';
 
 export function CandidateAvailableJobs() {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,6 @@ export function CandidateAvailableJobs() {
   const [confirmModalJob, setConfirmModalJob] = useState<JobPostingResponseDTO | null>(null);
   
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -56,15 +56,14 @@ export function CandidateAvailableJobs() {
 
   const handleConfirmApply = async () => {
     if (!confirmModalJob) return;
+    const targetJob = confirmModalJob;
     
-    setApplyingJobId(confirmModalJob.id);
+    setApplyingJobId(targetJob.id);
     try {
       const token = localStorage.getItem('token') || '';
-      await JobService.applyToJobPosting(token, confirmModalJob.id);
+      await JobService.applyToJobPosting(token, targetJob.id);
       setAppliedJobs(prev => new Set(prev).add(confirmModalJob.id));
-      
       setConfirmModalJob(null);
-      setSuccessMessage(`Sua candidatura para a vaga "${confirmModalJob.title}"${confirmModalJob.companyName ? ` na empresa ${confirmModalJob.companyName}` : ''} foi enviada com sucesso! Fique de olho no seu painel para realizar o teste técnico quando for liberado.`);
       setSuccessModalOpen(true);
     } catch (err: unknown) {
       window.alert((err as Error).message || 'Erro ao se candidatar.');
@@ -234,16 +233,9 @@ export function CandidateAvailableJobs() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-[#202124] group-hover:text-[#1a73e8] transition-colors truncate">
-                        {job.title}
-                      </h3>
-                      {hasApplied && (
-                        <span className="shrink-0 text-[11px] font-semibold text-[#137333] bg-[#e6f4ea] border border-[#ceead6] px-2.5 py-0.5 rounded-full">
-                          Inscrito
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="text-base font-semibold text-[#202124] group-hover:text-[#1a73e8] transition-colors truncate">
+                      {job.title}
+                    </h3>
 
                     <p className="text-sm font-medium text-[#202124] mt-0.5 truncate flex items-center gap-1.5">
                       <Building className="w-3.5 h-3.5 text-[#80868b] shrink-0" />
@@ -383,16 +375,10 @@ export function CandidateAvailableJobs() {
             </div>
           )}
 
-          <div className="space-y-2 text-sm text-[#5f6368]">
+          <div className="text-sm text-[#5f6368]">
             <p>
               Ao confirmar sua inscrição, a empresa receberá seus dados de contato e seu perfil profissional.
             </p>
-            <div className="flex items-start gap-2 p-3 bg-[#e8f0fe] border border-[#d2e3fc] rounded-[6px] text-xs text-[#1a73e8]">
-              <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                Esta vaga conta com <strong>avaliação técnica dinâmica por IA</strong>. Você poderá realizar o teste no seu painel assim que liberado.
-              </span>
-            </div>
           </div>
         </div>
       </Modal>
@@ -401,23 +387,42 @@ export function CandidateAvailableJobs() {
       <Modal
         isOpen={successModalOpen}
         onClose={() => setSuccessModalOpen(false)}
-        title="Candidatura Enviada!"
+        title="Candidatura Enviada"
         maxWidth="max-w-md"
         footer={
-          <AuthButton 
-            variant="primary" 
-            onClick={() => setSuccessModalOpen(false)} 
-          >
-            Entendido
-          </AuthButton>
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 w-full">
+            <button 
+              type="button"
+              onClick={() => setSuccessModalOpen(false)}
+              className="w-full sm:w-auto px-4 py-2 border border-[#dadce0] bg-white hover:bg-[#f8f9fa] text-[#5f6368] hover:text-[#202124] text-xs font-semibold rounded-full transition-colors cursor-pointer"
+            >
+              Continuar Explorando
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                setSuccessModalOpen(false);
+                navigate('/candidate/dashboard');
+              }}
+              className="w-full sm:w-auto px-5 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold rounded-full transition-all shadow-xs hover:shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              Ir para Minhas Vagas
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         }
       >
-        <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center">
-          <div className="w-16 h-16 bg-[#e6f4ea] rounded-full flex items-center justify-center mb-2 shadow-xs">
-            <CheckCircle className="w-8 h-8 text-[#137333]" />
+        <div className="py-2 text-center">
+          {/* Centered Minimalist Success Icon Badge */}
+          <div className="w-12 h-12 bg-[#e6f4ea] border border-[#ceead6] rounded-full flex items-center justify-center mx-auto mb-3 shadow-xs">
+            <Check className="w-6 h-6 text-[#137333]" strokeWidth={2.5} />
           </div>
-          <p className="text-[#202124] text-sm leading-relaxed max-w-sm">
-            {successMessage}
+
+          <h3 className="text-base font-semibold text-[#202124]">
+            Inscrição realizada com sucesso!
+          </h3>
+          <p className="text-xs text-[#5f6368] mt-1.5 max-w-sm mx-auto leading-relaxed">
+            Sua candidatura foi registrada. Agora você já pode realizar o teste técnico de avaliação no seu painel.
           </p>
         </div>
       </Modal>
