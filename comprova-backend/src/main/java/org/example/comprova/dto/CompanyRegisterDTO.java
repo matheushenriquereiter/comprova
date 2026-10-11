@@ -8,7 +8,7 @@ import org.hibernate.validator.constraints.br.CNPJ;
 
 public record CompanyRegisterDTO(
         @NotBlank(message = "Username cannot be null or empty.")
-        @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters.")
+        @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters.")
         String username,
 
         @NotBlank(message = "Email cannot be null or empty.")

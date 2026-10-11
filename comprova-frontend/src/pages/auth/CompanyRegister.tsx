@@ -83,7 +83,7 @@ export function CompanyRegister() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!formData.username || formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
-    else if (formData.username.length > 20) newErrors.username = 'Máximo de 20 caracteres';
+    else if (formData.username.length > 50) newErrors.username = 'Máximo de 50 caracteres';
     
     if (!formData.email || !emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
     
@@ -177,7 +177,7 @@ export function CompanyRegister() {
           disabled={isSubmitting}
           required 
           minLength={3}
-          maxLength={20}
+          maxLength={50}
         />
         
         <AuthInput 
