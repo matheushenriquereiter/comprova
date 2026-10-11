@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Bot, X, MessageSquare, Send } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { type JobPostingResponseDTO } from '../../services/jobService';
+import { JobService, type JobPostingResponseDTO } from '../../services/jobService';
 
 export function JobPostingCandidates() {
   const { id } = useParams<{ id: string }>();
@@ -16,23 +16,29 @@ export function JobPostingCandidates() {
   ]);
 
   useEffect(() => {
-    setJobPosting({
-      id: Number(id),
-      title: 'Engenheiro de Software Sênior',
-      description: 'Vaga de teste',
-      workplaceType: 'REMOTE',
-      status: 'PUBLISHED',
-      expiresAt: '2026-12-31T23:59:59',
-      candidates: [
-        { id: 1, username: 'Ana Silva', email: 'ana.silva@email.com', score: 95, status: 'PASSED' },
-        { id: 2, username: 'Roberto Carlos', email: 'roberto.carlos@email.com', score: 82, status: 'PASSED' },
-        { id: 3, username: 'Carla Dias', email: 'carla.dias@email.com', score: 75, status: 'EVALUATING' },
-        { id: 4, username: 'João Silva', email: 'joao.silva@email.com', status: 'PENDING_TEST' },
-        { id: 5, username: 'Marcos Santos', email: 'marcos.santos@email.com', score: 35, status: 'FAILED' }
-      ]
-    } as unknown as JobPostingResponseDTO);
-    setLoading(false);
-    setError('');
+    if (!id) return;
+    let active = true;
+    const token = localStorage.getItem('token') || '';
+
+    // Busca a vaga real (com os candidatos inscritos) no backend.
+    // O setState fica dentro do .then (regra react-hooks/set-state-in-effect).
+    JobService.getCompanyJobPostingById(token, Number(id))
+      .then(data => {
+        if (!active) return;
+        setJobPosting(data);
+        setError('');
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setError((err as Error).message || 'Erro ao carregar candidatos.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
 
@@ -136,7 +142,7 @@ export function JobPostingCandidates() {
                     <td className="px-6 py-4">
                       {candidate.status === 'PASSED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full border border-emerald-200">Aprovado</span>}
                       {candidate.status === 'FAILED' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-red-50 text-red-700 px-2 py-1 rounded-full border border-red-200">Reprovado</span>}
-                      {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Avaliação Concluída</span>}
+                      {candidate.status === 'EVALUATING' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] px-2 py-1 rounded-full border border-[#d2e3fc]">Em Avaliação</span>}
                       {candidate.status === 'PENDING_TEST' && <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-700 px-2 py-1 rounded-full border border-amber-200">Aguardando Teste</span>}
                       {!candidate.status && <span className="text-xs text-[#5f6368]">Inscrito</span>}
                     </td>

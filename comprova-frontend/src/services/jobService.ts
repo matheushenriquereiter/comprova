@@ -69,6 +69,16 @@ export interface QuestionDTO {
   evaluationCriteria: string[];
 }
 
+// Questão como o candidato recebe: com id e sem a resposta esperada
+export interface CandidateQuestionDTO {
+  id: number;
+  statement: string;
+  type: string;
+  skillEvaluated: string;
+  estimatedTimeMinutes?: number;
+  codeSnippet?: string;
+}
+
 export const JobService = {
   async getCompanyJobPostingById(_token: string, id: number): Promise<JobPostingResponseDTO> {
     return apiClient<JobPostingResponseDTO>(`/company/job-postings/${id}`, { method: "GET" });
@@ -111,10 +121,11 @@ export const JobService = {
     });
   },
 
-  async getCandidateTestQuestions(_token: string, applicationId: number): Promise<QuestionDTO[]> {
-    return apiClient<QuestionDTO[]>(`/candidate/applications/${applicationId}/test`, { method: 'GET' });
+  async getCandidateTestQuestions(_token: string, applicationId: number): Promise<CandidateQuestionDTO[]> {
+    return apiClient<CandidateQuestionDTO[]>(`/candidate/applications/${applicationId}/test`, { method: 'GET' });
   },
 
+  /** answers: { idDaQuestao: resposta } */
   async submitCandidateTest(_token: string, applicationId: number, answers: Record<number, string>): Promise<{ score: number }> {
     return apiClient<{ score: number }>(`/candidate/applications/${applicationId}/test`, {
       method: 'POST',

@@ -13,8 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,11 +27,23 @@ public class JobPostingService {
     private final SkillRepository skillRepository;
     private final JobSkillRequirementRepository jobSkillRequirementRepository;
     private final AnswerRepository answerRepository;
-    private final QuestionRepository questionRepository;
     private final AiEvaluationService aiEvaluationService;
 
     @Transactional
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
+        // Valida os pesos ANTES de gravar qualquer coisa no banco.
+        int weightSum = createJobPostingDTO.skills()
+                .stream()
+                .mapToInt(JobSkillRequirementDTO::weight)
+                .sum();
+
+        if (weightSum != 100) {
+            throw new BusinessException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
+            );
+        }
+
         List<Question> questions = createJobPostingDTO.questions()
                 .stream()
                 .map(questionDTO -> new Question(
@@ -66,16 +81,6 @@ public class JobPostingService {
                 })
                 .toList();
 
-        Integer weightSum = jobSkillRequirements.stream()
-                .reduce(0, (accumulator, jobSkillRequirement) -> accumulator + jobSkillRequirement.getWeight(), Integer::sum);
-
-        if (weightSum != 100) {
-            throw new BusinessException(
-                    HttpStatus.BAD_REQUEST,
-                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
-            );
-        }
-
         jobSkillRequirementRepository.saveAll(jobSkillRequirements);
     }
 
@@ -84,6 +89,14 @@ public class JobPostingService {
         JobPosting jobPosting = jobPostingRepository
                 .findById(jobPostingId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Job posting not found."));
+
+        if (jobPosting.getStatus() != JobPostingStatus.PUBLISHED) {
+            throw new BusinessException(HttpStatus.CONFLICT, "This job posting is closed.");
+        }
+
+        if (jobPosting.getExpiresAt() != null && jobPosting.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(HttpStatus.CONFLICT, "This job posting has expired.");
+        }
 
         if (jobApplicationRepository.existsByCandidateAndJobPosting(candidate, jobPosting)) {
             throw new BusinessException(HttpStatus.CONFLICT, "Candidate already applied for this application.");
@@ -134,68 +147,61 @@ public class JobPostingService {
 
     @Transactional(readOnly = true)
     public Page<CandidateJobApplicationResponseDTO> getAvailableJobPostings(Pageable pageable) {
+        // Só vagas publicadas e que ainda não expiraram.
         return jobPostingRepository
-                .findAllByStatusOrderByCreatedAtDesc(JobPostingStatus.PUBLISHED, pageable)
+                .findAllByStatusAndExpiresAtAfterOrderByCreatedAtDesc(JobPostingStatus.PUBLISHED, LocalDateTime.now(), pageable)
                 .map(JobPostingService::mapJobPostingToCandidateJobApplicationResponseDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<QuestionDTO> getApplicationTestQuestions(Long applicationId, Candidate candidate) {
-        JobApplication app = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
+    public List<CandidateQuestionDTO> getApplicationTestQuestions(Long applicationId, Candidate candidate) {
+        JobApplication app = findOwnedApplication(applicationId, candidate);
 
-        if (!app.getCandidate().getId().equals(candidate.getId())) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
+        if (app.getStatus() != ApplicationStatus.PENDING_TEST) {
+            throw new BusinessException(HttpStatus.CONFLICT, "The test for this application has already been submitted.");
         }
 
+        // Ordem fixa (por id) e o id de cada questão vai junto, para as respostas
+        // voltarem ligadas à questão certa. A resposta esperada nunca é enviada.
         return app.getJobPosting().getQuestions().stream()
-                .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
-                .map(q -> new QuestionDTO(
+                .sorted(Comparator.comparing(Question::getId))
+                .map(q -> new CandidateQuestionDTO(
+                        q.getId(),
                         q.getStatement(),
                         q.getType(),
                         q.getSkillEvaluated(),
                         q.getEstimatedTimeMinutes(),
-                        null,
-                        q.getCodeSnippet(),
-                        q.getEvaluationCriteria()
-                )).toList();
+                        q.getCodeSnippet()
+                ))
+                .toList();
     }
 
     @Transactional
     public Integer submitApplicationTest(Long applicationId, Candidate candidate, SubmitTestDTO submitTestDTO) {
-        JobApplication app = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
+        JobApplication app = findOwnedApplication(applicationId, candidate);
 
-        if (!app.getCandidate().getId().equals(candidate.getId())) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
+        // Impede reenviar a prova para tentar uma nota maior.
+        if (app.getStatus() != ApplicationStatus.PENDING_TEST) {
+            throw new BusinessException(HttpStatus.CONFLICT, "The test for this application has already been submitted.");
         }
 
         app.setStatus(ApplicationStatus.EVALUATING);
         jobApplicationRepository.saveAndFlush(app);
 
-        // Delete any existing answers for this application to avoid duplicates
-        List<Answer> existingAnswers = answerRepository.findAllByJobApplication(app);
-        if (!existingAnswers.isEmpty()) {
-            answerRepository.deleteAll(existingAnswers);
-            answerRepository.flush();
-        }
+        // As respostas chegam como { idDaQuestao: texto }.
+        Map<Long, String> answersById = (submitTestDTO != null && submitTestDTO.answers() != null)
+                ? submitTestDTO.answers()
+                : Map.of();
 
         List<Question> questions = app.getJobPosting().getQuestions().stream()
-                .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .sorted(Comparator.comparing(Question::getId))
                 .toList();
 
-        // Ensure an Answer is saved for EVERY question in the test
-        for (int i = 0; i < questions.size(); i++) {
-            Question question = questions.get(i);
-            String responseText = "";
-            if (submitTestDTO != null && submitTestDTO.answers() != null) {
-                String text = submitTestDTO.answers().get((long) i);
-                if (text != null) {
-                    responseText = text.trim();
-                }
-            }
-            Answer answer = new Answer(app, question, responseText);
-            answerRepository.save(answer);
+        // Salva uma resposta para CADA questão da prova (em branco se o candidato não respondeu),
+        // assim a nota final é dividida pelo total de questões.
+        for (Question question : questions) {
+            String text = answersById.get(question.getId());
+            answerRepository.save(new Answer(app, question, text == null ? "" : text.trim()));
         }
         answerRepository.flush();
 
@@ -218,6 +224,7 @@ public class JobPostingService {
         jobPosting.setEmploymentType(updateJobPostingDTO.employmentType());
         jobPosting.setLocation(updateJobPostingDTO.location());
         jobPosting.setStatus(updateJobPostingDTO.status());
+        jobPosting.setExpiresAt(updateJobPostingDTO.expiresAt());
 
         jobPostingRepository.save(jobPosting);
     }
@@ -232,7 +239,23 @@ public class JobPostingService {
             throw new BusinessException(HttpStatus.FORBIDDEN, "You do not have permission to delete this job posting.");
         }
 
+        // As respostas apontam para as candidaturas e para as questões da vaga.
+        // Precisam sair primeiro, senão o banco recusa a exclusão (chave estrangeira).
+        answerRepository.deleteByJobApplication_JobPosting(jobPosting);
+        answerRepository.flush();
+
         jobPostingRepository.delete(jobPosting);
+    }
+
+    private JobApplication findOwnedApplication(Long applicationId, Candidate candidate) {
+        JobApplication app = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
+
+        if (!app.getCandidate().getId().equals(candidate.getId())) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
+        }
+
+        return app;
     }
 
     private static CandidateJobApplicationResponseDTO mapJobPostingToCandidateJobApplicationResponseDTO(JobPosting jobPosting) {

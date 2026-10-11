@@ -20,6 +20,8 @@ export function CompanyDashboard() {
   const [serverError, setServerError] = useState('');
 
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
+  // Momento em que a tela abriu, usado no card "Expirando em breve"
+  const [now] = useState(() => Date.now());
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -31,9 +33,19 @@ export function CompanyDashboard() {
     }
   }, []);
 
+  // Carga inicial: o setState fica dentro do .then (regra react-hooks/set-state-in-effect)
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    let active = true;
+    const token = localStorage.getItem('token') || '';
+    JobService.getCompanyJobPostings(token)
+      .then(page => {
+        if (active) setJobs(page.content);
+      })
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   // Form States
@@ -83,9 +95,23 @@ export function CompanyDashboard() {
 
   const currentWeightSum = skills.reduce((acc, skill) => acc + skill.weight, 0);
 
+  // Números dos cards do topo, calculados a partir das vagas reais da empresa
+  const activeJobs = jobs.filter(job => job.status === 'PUBLISHED');
+  const activeJobsCount = activeJobs.length;
+  const totalCandidatesCount = jobs.reduce((acc, job) => acc + (job.candidates?.length || 0), 0);
+  const expiringSoonCount = activeJobs.filter(job => {
+    if (!job.expiresAt) return false;
+    const daysLeft = (new Date(job.expiresAt).getTime() - now) / (1000 * 60 * 60 * 24);
+    return daysLeft >= 0 && daysLeft <= 7; // vence nos próximos 7 dias
+  }).length;
+
   const handleAddSkill = () => {
     if (!newSkillName.trim()) return;
     const weight = parseInt(newSkillWeight) || 0;
+    if (weight < 1 || weight > 100) {
+      setServerError('O peso de cada habilidade deve estar entre 1 e 100.');
+      return;
+    }
     if (currentWeightSum + weight > 100) {
       setServerError(`O peso total não pode ultrapassar 100. Você tentou adicionar ${weight} a ${currentWeightSum}.`);
       return;
@@ -172,7 +198,8 @@ export function CompanyDashboard() {
           workplaceType: jobFormData.workplaceType,
           employmentType: jobFormData.employmentType,
           location: jobFormData.location,
-          status: jobFormData.status
+          status: jobFormData.status,
+          expiresAt: expiresDate
         });
       } else {
         const payload: CreateJobPostingDTO = {
@@ -256,7 +283,7 @@ export function CompanyDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-[#5f6368]">Vagas Ativas</p>
-            <h3 className="text-2xl font-medium text-[#202124] mt-1">1</h3>
+            <h3 className="text-2xl font-medium text-[#202124] mt-1">{activeJobsCount}</h3>
           </div>
         </div>
         <div className="bg-white border border-[#dadce0] rounded-[8px] p-5 flex items-start gap-4">
@@ -265,7 +292,7 @@ export function CompanyDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-[#5f6368]">Total de Candidatos</p>
-            <h3 className="text-2xl font-medium text-[#202124] mt-1">4</h3>
+            <h3 className="text-2xl font-medium text-[#202124] mt-1">{totalCandidatesCount}</h3>
           </div>
         </div>
         <div className="bg-white border border-[#dadce0] rounded-[8px] p-5 flex items-start gap-4">
@@ -274,7 +301,7 @@ export function CompanyDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-[#5f6368]">Expirando em breve</p>
-            <h3 className="text-2xl font-medium text-[#202124] mt-1">0</h3>
+            <h3 className="text-2xl font-medium text-[#202124] mt-1">{expiringSoonCount}</h3>
           </div>
         </div>
       </div>

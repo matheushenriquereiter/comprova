@@ -6,7 +6,7 @@ import org.example.comprova.dto.CandidateJobApplicationResponseDTO;
 import org.example.comprova.dto.CandidateApplicationDTO;
 import org.example.comprova.dto.CreateJobPostingDTO;
 import org.example.comprova.dto.JobPostingResponseDTO;
-import org.example.comprova.dto.QuestionDTO;
+import org.example.comprova.dto.CandidateQuestionDTO;
 import org.example.comprova.dto.UpdateJobPostingDTO;
 import org.example.comprova.model.Candidate;
 import org.example.comprova.model.Company;
@@ -62,7 +62,7 @@ public class JobPostingController {
     }
 
     @GetMapping("/candidate/applications/{applicationId}/test")
-    public ResponseEntity<List<QuestionDTO>> getTestQuestions(
+    public ResponseEntity<List<CandidateQuestionDTO>> getTestQuestions(
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
         return ResponseEntity.ok(jobPostingService.getApplicationTestQuestions(applicationId, candidate));
@@ -70,7 +70,7 @@ public class JobPostingController {
 
     @PostMapping("/candidate/applications/{applicationId}/test")
     public ResponseEntity<java.util.Map<String, Integer>> submitTest(
-            @RequestBody org.example.comprova.dto.SubmitTestDTO submitTestDTO,
+            @Valid @RequestBody org.example.comprova.dto.SubmitTestDTO submitTestDTO,
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
         Integer score = jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);

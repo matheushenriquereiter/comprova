@@ -3,14 +3,34 @@ import { Building, Phone, Lock, Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
-import { AuthService } from '../../services/authService';
-import type { User } from '../../types/User';
+import { CompanyService, type CompanyProfile as CompanyProfileData } from '../../services/companyService';
+
+const formatCNPJ = (value: string) =>
+  value
+    .replace(/\D/g, '')
+    .replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 10) {
+    return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  }
+  return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  'Email address is already in use.': 'Este e-mail já está em uso por outra conta.',
+  'Current password is incorrect.': 'A senha atual está incorreta.',
+  'Password must be between 8 and 128 characters.': 'A nova senha deve ter entre 8 e 128 caracteres.',
+  'Phone must be a valid number with 10 to 15 digits.': 'Insira um telefone válido com DDD.',
+};
 
 export function CompanyProfile() {
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [serverError, setServerError] = useState('');
-  
+
   const [formData, setFormData] = useState({
     legalName: '',
     tradeName: '',
@@ -21,49 +41,73 @@ export function CompanyProfile() {
     newPassword: ''
   });
 
+  const fillForm = (profile: CompanyProfileData) => {
+    setFormData(prev => ({
+      ...prev,
+      legalName: profile.legalName,
+      tradeName: profile.tradeName,
+      cnpj: formatCNPJ(profile.cnpj),
+      email: profile.email,
+      phone: formatPhone(profile.phone),
+      currentPassword: '',
+      newPassword: ''
+    }));
+  };
+
   useEffect(() => {
-    // Load current user data
-    const token = localStorage.getItem('token');
-    if (token) {
-      AuthService.getMe(token).then((user: User) => {
-        setFormData(prev => ({
-          ...prev,
-          legalName: user.username || 'Empresa Exemplo LTDA', // Fallback se não tiver no backend
-          tradeName: user.username || 'Exemplo',
-          email: user.email || '',
-          cnpj: '00.000.000/0001-00', // Mock data para visualização
-          phone: '(11) 99999-9999'
-        }));
-      }).catch(console.error);
-    }
+    // Carrega os dados reais da empresa logada
+    CompanyService.getProfile()
+      .then(fillForm)
+      .catch(() => setServerError('Não foi possível carregar os dados da empresa.'))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: name === 'phone' ? formatPhone(value) : value }));
     setSuccessMessage('');
     setServerError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setServerError('');
     setSuccessMessage('');
 
+    if (formData.newPassword && !formData.currentPassword) {
+      setServerError('Informe a senha atual para definir uma nova senha.');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      // Aqui seria a chamada real para a API:
-      // await CompanyService.updateProfile(formData);
-      
-      // Simulando delay de rede
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const updated = await CompanyService.updateProfile({
+        legalName: formData.legalName,
+        tradeName: formData.tradeName,
+        email: formData.email,
+        phone: formData.phone.replace(/[^\d+]/g, ''),
+        // Só envia os campos de senha quando o usuário quer trocá-la
+        currentPassword: formData.newPassword ? formData.currentPassword : undefined,
+        newPassword: formData.newPassword || undefined
+      });
+      fillForm(updated);
       setSuccessMessage('Informações atualizadas com sucesso.');
-    } catch {
-      setServerError('Falha ao atualizar as informações. Tente novamente.');
+    } catch (err: unknown) {
+      const data = err as { message?: string; errors?: Array<{ message: string }> };
+      const message = data?.errors?.[0]?.message || data?.message || '';
+      setServerError(ERROR_MESSAGES[message] || 'Falha ao atualizar as informações. Verifique os campos e tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-[#5f6368]">
+        Carregando perfil...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">

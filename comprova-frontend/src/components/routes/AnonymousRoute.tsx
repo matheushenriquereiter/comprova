@@ -18,7 +18,7 @@ export function AnonymousRoute({ children }: PrivateRouteProps) {
       return;
     }
 
-    AuthService.getMe(token)
+    AuthService.getMe()
       .then(user => {
         setAuthenticatedUser(user);
       })
