@@ -49,11 +49,11 @@ export const AuthService = {
       return data.token;
     } catch (err: unknown) {
       const error = err as { message?: string };
-      throw new Error(error?.message || 'Credenciais inválidas ou erro no servidor.');
+      throw new Error(error?.message || 'Credenciais inválidas ou erro no servidor.', { cause: err });
     }
   },
 
-  async getMe(_token?: string): Promise<User> {
+  async getMe(): Promise<User> {
     try {
       return await apiClient<User>('/auth/me', {
         method: 'GET'

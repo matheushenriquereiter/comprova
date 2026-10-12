@@ -15,5 +15,9 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
 
     Page<JobPosting> findAllByJobApplications_CandidateOrderByCreatedAtDesc(Candidate candidate, Pageable pageable);
 
-    Page<JobPosting> findAllByStatusOrderByCreatedAtDesc(org.example.comprova.enums.JobPostingStatus status, Pageable pageable);
+    Page<JobPosting> findAllByStatusAndExpiresAtAfterOrderByCreatedAtDesc(
+            org.example.comprova.enums.JobPostingStatus status,
+            java.time.LocalDateTime now,
+            Pageable pageable
+    );
 }

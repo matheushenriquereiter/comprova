@@ -1,5 +1,6 @@
 import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import { useState, useEffect } from 'react';
+import { getErrorMessage } from '../../utils/apiErrors';
 import { useNavigate } from 'react-router-dom';
 import { 
   Briefcase, 
@@ -66,7 +67,7 @@ export function CandidateAvailableJobs() {
       setConfirmModalJob(null);
       setSuccessModalOpen(true);
     } catch (err: unknown) {
-      window.alert((err as Error).message || 'Erro ao se candidatar.');
+      window.alert(getErrorMessage(err, 'Erro ao se candidatar.'));
       setConfirmModalJob(null);
     } finally {
       setApplyingJobId(null);
