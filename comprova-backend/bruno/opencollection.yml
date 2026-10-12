@@ -20,7 +20,7 @@ request:
     token: "{{bearer_token}}"
   variables:
     - name: url
-      value: https://147.15.28.60:8080
+      value: https://comprova-backend.vercel.app
 bundled: false
 extensions:
   bruno:
