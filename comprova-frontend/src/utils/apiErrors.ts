@@ -57,6 +57,8 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
   return translateApiMessage(fieldMessage ?? error?.message, fallback);
 }
 
+export const getErrorMessage = getApiErrorMessage;
+
 /** Erros por campo (validação de DTO) e/ou conflitos conhecidos, para exibir sob cada input. */
 export function getApiFieldErrors(err: unknown): Record<string, string> {
   const error = err as ApiError | undefined;

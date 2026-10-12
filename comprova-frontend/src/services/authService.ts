@@ -53,7 +53,7 @@ export const AuthService = {
     }
   },
 
-  async getMe(): Promise<User> {
+  async getMe(_token?: string): Promise<User> {
     try {
       return await apiClient<User>('/auth/me', {
         method: 'GET'
