@@ -243,7 +243,19 @@ public class JobPostingService {
             throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process test submission.");
         }
 
-        return aiEvaluationService.evaluateApplicationTestSync(app);
+        try {
+            return aiEvaluationService.evaluateApplicationTestSync(app);
+        } catch (Exception e) {
+            transactionTemplate.executeWithoutResult(status ->
+                    jobApplicationRepository.findById(applicationId).ifPresent(application -> {
+                        if (application.getStatus() == ApplicationStatus.EVALUATING) {
+                            application.setStatus(ApplicationStatus.PENDING_TEST);
+                            jobApplicationRepository.saveAndFlush(application);
+                        }
+                    })
+            );
+            throw e;
+        }
     }
 
     @Transactional

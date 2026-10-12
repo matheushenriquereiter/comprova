@@ -1,7 +1,7 @@
 import { JobService } from "../../services/jobService";
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, Code, FileText, CheckCircle, AlertTriangle, CheckCircle2, Sparkles, Send } from 'lucide-react';
-import { Link, useParams, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { type CandidateQuestionDTO } from '../../services/jobService';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -22,33 +22,15 @@ export function CandidateTest() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   
-  // Detecta apenas na inicialização (montagem/reload) se esta prova já foi submetida antes
-  const [wasAlreadySubmittedOnMount] = useState(() => {
-    if (!id) return false;
-    const val = localStorage.getItem(`submitted_test_${id}`) || sessionStorage.getItem(`submitted_test_${id}`);
-    if (!val) return false;
-    const ts = Number(val);
-    if (!isNaN(ts) && ts > 0) {
-      if (Date.now() - ts > 15 * 60 * 1000) {
-        localStorage.removeItem(`submitted_test_${id}`);
-        sessionStorage.removeItem(`submitted_test_${id}`);
-        return false;
-      }
-    }
-    return true;
-  });
-
   useEffect(() => {
-    if (wasAlreadySubmittedOnMount) {
-      navigate('/candidate/dashboard', { replace: true });
-      return;
-    }
-
     const fetchQuestions = async () => {
       if (!id) {
         navigate('/candidate/dashboard', { replace: true });
         return;
       }
+
+      localStorage.removeItem(`submitted_test_${id}`);
+      sessionStorage.removeItem(`submitted_test_${id}`);
 
       setLoading(true);
       try {
@@ -58,9 +40,6 @@ export function CandidateTest() {
         const appsRes = await JobService.getCandidateApplications(token, 0, 100);
         const myApp = appsRes.content?.find(a => a.applicationId === Number(id));
         if (myApp && myApp.status !== 'PENDING_TEST') {
-          const nowStr = Date.now().toString();
-          localStorage.setItem(`submitted_test_${id}`, nowStr);
-          sessionStorage.setItem(`submitted_test_${id}`, nowStr);
           navigate('/candidate/dashboard', { replace: true });
           return;
         }
@@ -70,19 +49,13 @@ export function CandidateTest() {
         setQuestions(data);
         setError('');
       } catch {
-        // Se a prova já foi enviada, está em correção ou não pode ser acessada, marca e redireciona ao painel
-        if (id) {
-          const nowStr = Date.now().toString();
-          localStorage.setItem(`submitted_test_${id}`, nowStr);
-          sessionStorage.setItem(`submitted_test_${id}`, nowStr);
-        }
         navigate('/candidate/dashboard', { replace: true });
       } finally {
         setLoading(false);
       }
     };
     fetchQuestions();
-  }, [id, navigate, wasAlreadySubmittedOnMount]);
+  }, [id, navigate]);
 
   const handleAnswerChange = (idx: number, value: string) => {
     setAnswers(prev => ({ ...prev, [idx]: value }));
@@ -96,10 +69,7 @@ export function CandidateTest() {
     if (!id) return;
     setIsConfirmModalOpen(false);
     setSubmitting(true);
-    // Grava as flags locais para que qualquer recarregamento futuro leve ao dashboard
-    const nowStr = Date.now().toString();
-    localStorage.setItem(`submitted_test_${id}`, nowStr);
-    sessionStorage.setItem(`submitted_test_${id}`, nowStr);
+    setError('');
     try {
       const token = localStorage.getItem('token') || '';
       const allAnswers: Record<number, string> = {};
@@ -109,18 +79,12 @@ export function CandidateTest() {
       const responseData = await JobService.submitCandidateTest(token, Number(id), allAnswers);
       setScore(responseData.score);
       setSuccess(true);
-    } catch {
-      // Se a requisição for abortada (por exemplo ao recarregar a página),
-      // as flags já estão salvas e o recarregamento levará para o dashboard
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Erro ao enviar a avaliação. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
   };
-
-  // Se a página for carregada ou recarregada e já tiver sido enviada previamente, vai pro dashboard
-  if (wasAlreadySubmittedOnMount) {
-    return <Navigate to="/candidate/dashboard" replace />;
-  }
 
   // Durante a correção ativa pela IA, exibe a tela de carregamento normalmente
   if (submitting) {

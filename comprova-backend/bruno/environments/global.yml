@@ -1,4 +1,4 @@
 name: global
 variables:
   - name: bearer_token
-    value: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXRoZXVzIiwiaWF0IjoxNzkxODI2MTE4LCJleHAiOjE3OTE4Mjk3MTh9.KB5XSfXiZLm_yE0Hgli7FNeHdrz3_SW9xrAi0ONpX0pbTfwMmGP_cJK8enuKu9fjHkOs4lkQmDA8g61FJLfppw
+    value: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtYXRoZXVzIiwiaWF0IjoxNzkxODQ3MzI5LCJleHAiOjE3OTE4NTA5Mjl9.gj0-5giXfRZIEAAK4ZeiHbc6MQUFijfSO0X_FzMhVEisW6hCGom976qZcn5epofs-7_OinWXrICY4vi9HZzIrQ

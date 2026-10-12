@@ -64,43 +64,15 @@ export function CandidateDashboard() {
     };
   }, []);
 
-  const isLocallySubmitted = useCallback((applicationId: number | string): boolean => {
-    const val = localStorage.getItem(`submitted_test_${applicationId}`) ||
-                sessionStorage.getItem(`submitted_test_${applicationId}`);
-    if (!val) return false;
-    const ts = Number(val);
-    if (!isNaN(ts) && ts > 0) {
-      // Se já passou mais de 15 minutos e continua PENDING_TEST, expira
-      if (Date.now() - ts > 15 * 60 * 1000) {
-        localStorage.removeItem(`submitted_test_${applicationId}`);
-        sessionStorage.removeItem(`submitted_test_${applicationId}`);
-        return false;
-      }
-    }
-    return true;
+  const getEffectiveStatus = useCallback((app: CandidateApplicationDTO): string => {
+    return app.status;
   }, []);
 
-  const getEffectiveStatus = useCallback((app: CandidateApplicationDTO): string => {
-    // Se o backend já persistiu um status final
-    if (app.status !== 'PENDING_TEST' && app.status !== 'EVALUATING') {
-      return app.status;
-    }
-
-    // Se o backend marcou como EVALUATING ou se o candidato submeteu nesta máquina
-    if (app.status === 'EVALUATING' || isLocallySubmitted(app.applicationId)) {
-      return 'EVALUATING';
-    }
-
-    return app.status;
-  }, [isLocallySubmitted]);
-
-  // Limpa as flags locais de submissão quando a avaliação for finalizada pelo backend
+  // Limpa quaisquer flags antigas de submissão que possam ter ficado salvas no navegador
   useEffect(() => {
     applications.forEach(app => {
-      if (app.status !== 'PENDING_TEST' && app.status !== 'EVALUATING') {
-        localStorage.removeItem(`submitted_test_${app.applicationId}`);
-        sessionStorage.removeItem(`submitted_test_${app.applicationId}`);
-      }
+      localStorage.removeItem(`submitted_test_${app.applicationId}`);
+      sessionStorage.removeItem(`submitted_test_${app.applicationId}`);
     });
   }, [applications]);
 
