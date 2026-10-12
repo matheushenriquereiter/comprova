@@ -14,6 +14,7 @@ import { DashboardLayout } from "./components/ui/DashboardLayout.tsx";
 import { CandidateRoute } from "./components/routes/CandidateRoute.tsx";
 import { CandidateDashboard } from "./pages/dashboard/CandidateDashboard.tsx";
 import { CompanyProfile } from "./pages/dashboard/CompanyProfile.tsx";
+import { CandidateProfile } from "./pages/dashboard/CandidateProfile.tsx";
 import { CandidateAvailableJobs } from "./pages/dashboard/CandidateAvailableJobs.tsx";
 import { CandidateTest } from "./pages/dashboard/CandidateTest.tsx";
 
@@ -87,6 +88,10 @@ const router = createBrowserRouter([
                 ),
             },
             {
+                path: "/candidate/test",
+                element: <Navigate to="/candidate/dashboard" replace />,
+            },
+            {
                 path: "/candidate/test/:id",
                 element: (
                     <CandidateRoute>
@@ -99,6 +104,14 @@ const router = createBrowserRouter([
                 element: (
                     <CandidateRoute>
                         <CandidateAvailableJobs />
+                    </CandidateRoute>
+                ),
+            },
+            {
+                path: "/candidate/profile",
+                element: (
+                    <CandidateRoute>
+                        <CandidateProfile />
                     </CandidateRoute>
                 ),
             }

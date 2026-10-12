@@ -2,9 +2,12 @@ package org.example.comprova.controller;
 
 import jakarta.validation.Valid;
 import org.example.comprova.dto.GenerateQuestionsDTO;
+import org.example.comprova.dto.JobSkillRequirementDTO;
 import org.example.comprova.dto.QuestionDTO;
+import org.example.comprova.exceptions.BusinessException;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,28 +20,27 @@ import java.util.stream.Collectors;
 public class QuestionGeneratorController {
     private final ChatClient chatClient;
     private static final String PROMPT = """
-            You are an expert IT recruiter and Senior Software Engineer creating a technical assessment.
+            Senior Software Engineer assessment generator.
+            Generate exactly 5 open-ended technical questions in Brazilian Portuguese (pt-BR).
             
-            Generate exactly 5 open-ended programming questions in Brazilian Portuguese.
+            Context:
+            - Role description: {description}
+            - Required skills and weights: {requirements}
             
-            Context for generation:
-            - Manager's description: {description}
-            - Required skills and weights (allocate more questions to higher weighted skills): {requirements}
+            Question Types:
+            - PRACTICAL: Candidate writes code, fixes a bug, or completes an implementation.
+            - THEORETICAL: Candidate explains concepts, architecture, or design tradeoffs.
             
-            Question Type Requirements:
-            1. PRACTICAL: The candidate must write code, fix a bug, complete an implementation, or design a solution.
-            2. THEORETICAL: The candidate must explain a concept, compare architectural approaches, or justify a decision.
+            Fields:
+            - statement: Question prompt instructing candidate in pt-BR.
+            - skillEvaluated: Exact skill name from requirements.
+            - estimatedTimeMinutes: Realistic completion time (5-45).
+            - expectedAnswer: Target benchmark solution/code in pt-BR.
+            - codeSnippet: Starter/buggy code (practical) or illustrative snippet (theoretical).
+            - evaluationCriteria: 3-5 objective checkable grading criteria in pt-BR (e.g. edge cases, Big-O, key distinctions).
             
-            Data Field Instructions & Constraints:
-            - statement: The main text of the question instructing the candidate on what to write or code.
-            - skillEvaluated: Must be one of the exact skills listed in the requirements.
-            - estimatedTimeMinutes: Provide a realistic integer between 5 and 45 representing how long the candidate needs to complete it.
-            - expectedAnswer: The ideal complete answer, explanation, or target code solution.
-            - codeSnippet: You MUST provide a code snippet for every question. For practical questions, provide starter code or buggy code to fix. For theoretical questions, provide a code example that illustrates the concept they need to explain. Do NOT leave this blank or use "N/A".
-            - evaluationCriteria: Provide 3 to 5 objective, bulleted points that a reviewer should look for to grade the answer.
-            
-            Format Requirements:
-            - All questions must be open-ended (essay or code submission). Do NOT generate multiple-choice options.
+            Rules:
+            - Open-ended only, no multiple-choice.
             - Generate all content (except code syntax) strictly in Brazilian Portuguese (pt-BR).
             """;
 
@@ -46,9 +48,19 @@ public class QuestionGeneratorController {
         this.chatClient = chatClientBuilder.build();
     }
 
-    @PostMapping("/generate-questions")
+    @PostMapping("/company/generate-questions")
     public ResponseEntity<List<QuestionDTO>> generateQuestion(
             @Valid @RequestBody GenerateQuestionsDTO generateQuestionsDTO) {
+
+        int weightSum = generateQuestionsDTO.skills().stream()
+                .mapToInt(JobSkillRequirementDTO::weight)
+                .sum();
+        if (weightSum != 100) {
+            throw new BusinessException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
+            );
+        }
 
         String jobRequirements = generateQuestionsDTO.skills().stream()
                 .map(dto -> "Skill %s - Weight: %d".formatted(dto.name(), dto.weight()))

@@ -9,7 +9,15 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "job_applications")
+@Table(
+        name = "job_applications",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_candidate_job_posting",
+                        columnNames = {"candidate_id", "job_posting_id"}
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor

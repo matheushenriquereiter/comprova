@@ -26,9 +26,30 @@ public class JobPostingService {
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
     private final AiEvaluationService aiEvaluationService;
+    private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
     @Transactional
     public void createJobPosting(Company company, CreateJobPostingDTO createJobPostingDTO) {
+        int weightSum = createJobPostingDTO.skills().stream()
+                .mapToInt(JobSkillRequirementDTO::weight)
+                .sum();
+
+        if (weightSum != 100) {
+            throw new BusinessException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
+            );
+        }
+
+        long distinctSkills = createJobPostingDTO.skills().stream()
+                .map(skill -> skill.name().toLowerCase(java.util.Locale.ROOT))
+                .distinct()
+                .count();
+
+        if (distinctSkills != createJobPostingDTO.skills().size()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Skills must not contain duplicated names.");
+        }
+
         List<Question> questions = createJobPostingDTO.questions()
                 .stream()
                 .map(questionDTO -> new Question(
@@ -66,16 +87,6 @@ public class JobPostingService {
                 })
                 .toList();
 
-        Integer weightSum = jobSkillRequirements.stream()
-                .reduce(0, (accumulator, jobSkillRequirement) -> accumulator + jobSkillRequirement.getWeight(), Integer::sum);
-
-        if (weightSum != 100) {
-            throw new BusinessException(
-                    HttpStatus.BAD_REQUEST,
-                    String.format("The sum of skill weights must be exactly 100, but was %d.", weightSum)
-            );
-        }
-
         jobSkillRequirementRepository.saveAll(jobSkillRequirements);
     }
 
@@ -84,6 +95,14 @@ public class JobPostingService {
         JobPosting jobPosting = jobPostingRepository
                 .findById(jobPostingId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Job posting not found."));
+
+        if (jobPosting.getStatus() != JobPostingStatus.PUBLISHED) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Job posting is not open for applications.");
+        }
+
+        if (jobPosting.getExpiresAt() != null && jobPosting.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Job posting has expired.");
+        }
 
         if (jobApplicationRepository.existsByCandidateAndJobPosting(candidate, jobPosting)) {
             throw new BusinessException(HttpStatus.CONFLICT, "Candidate already applied for this application.");
@@ -140,64 +159,85 @@ public class JobPostingService {
     }
 
     @Transactional(readOnly = true)
-    public List<QuestionDTO> getApplicationTestQuestions(Long applicationId, Candidate candidate) {
+    public List<CandidateQuestionDTO> getApplicationTestQuestions(Long applicationId, Candidate candidate) {
         JobApplication app = jobApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
 
         if (!app.getCandidate().getId().equals(candidate.getId())) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
+        }
+
+        if (app.getStatus() != ApplicationStatus.PENDING_TEST) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Test has already been submitted.");
         }
 
         return app.getJobPosting().getQuestions().stream()
                 .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
-                .map(q -> new QuestionDTO(
+                .map(q -> new CandidateQuestionDTO(
+                        q.getId(),
                         q.getStatement(),
                         q.getType(),
                         q.getSkillEvaluated(),
                         q.getEstimatedTimeMinutes(),
-                        null,
-                        q.getCodeSnippet(),
-                        q.getEvaluationCriteria()
+                        q.getCodeSnippet()
                 )).toList();
     }
 
-    @Transactional
     public Integer submitApplicationTest(Long applicationId, Candidate candidate, SubmitTestDTO submitTestDTO) {
-        JobApplication app = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
+        JobApplication app = transactionTemplate.execute(status -> {
+            JobApplication application = jobApplicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Application not found."));
 
-        if (!app.getCandidate().getId().equals(candidate.getId())) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
-        }
-
-        app.setStatus(ApplicationStatus.EVALUATING);
-        jobApplicationRepository.saveAndFlush(app);
-
-        // Delete any existing answers for this application to avoid duplicates
-        List<Answer> existingAnswers = answerRepository.findAllByJobApplication(app);
-        if (!existingAnswers.isEmpty()) {
-            answerRepository.deleteAll(existingAnswers);
-            answerRepository.flush();
-        }
-
-        List<Question> questions = app.getJobPosting().getQuestions().stream()
-                .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
-                .toList();
-
-        // Ensure an Answer is saved for EVERY question in the test
-        for (int i = 0; i < questions.size(); i++) {
-            Question question = questions.get(i);
-            String responseText = "";
-            if (submitTestDTO != null && submitTestDTO.answers() != null) {
-                String text = submitTestDTO.answers().get((long) i);
-                if (text != null) {
-                    responseText = text.trim();
-                }
+            if (!application.getCandidate().getId().equals(candidate.getId())) {
+                throw new BusinessException(HttpStatus.FORBIDDEN, "Forbidden.");
             }
-            Answer answer = new Answer(app, question, responseText);
-            answerRepository.save(answer);
+
+            if (application.getStatus() != ApplicationStatus.PENDING_TEST) {
+                throw new BusinessException(HttpStatus.CONFLICT, "Test has already been submitted.");
+            }
+
+            if (application.getJobPosting().getStatus() == JobPostingStatus.CLOSED) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "Job posting is closed.");
+            }
+
+            application.setStatus(ApplicationStatus.EVALUATING);
+            jobApplicationRepository.saveAndFlush(application);
+
+            // Delete any existing answers for this application to avoid duplicates
+            List<Answer> existingAnswers = answerRepository.findAllByJobApplication(application);
+            if (!existingAnswers.isEmpty()) {
+                answerRepository.deleteAll(existingAnswers);
+                answerRepository.flush();
+            }
+
+            List<Question> questions = application.getJobPosting().getQuestions().stream()
+                    .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                    .toList();
+
+            // Ensure an Answer is saved for EVERY question in the test
+            for (int i = 0; i < questions.size(); i++) {
+                Question question = questions.get(i);
+                String responseText = "";
+                if (submitTestDTO != null && submitTestDTO.answers() != null) {
+                    String text = submitTestDTO.answers().get((long) i);
+                    if (text == null && question.getId() != null) {
+                        text = submitTestDTO.answers().get(question.getId());
+                    }
+                    if (text != null) {
+                        responseText = text.trim();
+                    }
+                }
+                Answer answer = new Answer(application, question, responseText);
+                answerRepository.save(answer);
+            }
+            answerRepository.flush();
+
+            return application;
+        });
+
+        if (app == null) {
+            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process test submission.");
         }
-        answerRepository.flush();
 
         return aiEvaluationService.evaluateApplicationTestSync(app);
     }
@@ -210,6 +250,13 @@ public class JobPostingService {
 
         if (!jobPosting.getCompany().getId().equals(company.getId())) {
             throw new BusinessException(HttpStatus.FORBIDDEN, "You do not have permission to update this job posting.");
+        }
+
+        boolean isReopening = updateJobPostingDTO.status() == JobPostingStatus.PUBLISHED
+                && jobPosting.getStatus() != JobPostingStatus.PUBLISHED;
+        if (isReopening && jobPosting.getExpiresAt() != null
+                && jobPosting.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "An expired job posting cannot be published again.");
         }
 
         jobPosting.setTitle(updateJobPostingDTO.title());
@@ -232,7 +279,38 @@ public class JobPostingService {
             throw new BusinessException(HttpStatus.FORBIDDEN, "You do not have permission to delete this job posting.");
         }
 
+        if (jobPosting.getJobApplications() != null) {
+            for (JobApplication app : jobPosting.getJobApplications()) {
+                List<Answer> answers = answerRepository.findAllByJobApplication(app);
+                if (!answers.isEmpty()) {
+                    answerRepository.deleteAll(answers);
+                }
+            }
+            answerRepository.flush();
+        }
+
         jobPostingRepository.delete(jobPosting);
+    }
+
+    @Transactional
+    public void updateApplicationStatus(Company company, Long applicationId, UpdateApplicationStatusDTO dto) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Candidatura não encontrada."));
+
+        if (!application.getJobPosting().getCompany().getId().equals(company.getId())) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "Você não tem permissão para alterar esta candidatura.");
+        }
+
+        if (application.getStatus() == ApplicationStatus.PENDING_TEST || application.getStatus() == ApplicationStatus.EVALUATING) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "O candidato ainda não concluiu a avaliação técnica.");
+        }
+
+        if (dto.status() != ApplicationStatus.PASSED && dto.status() != ApplicationStatus.FAILED) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "O status só pode ser definido como PASSED (Aprovado) ou FAILED (Reprovado).");
+        }
+
+        application.setStatus(dto.status());
+        jobApplicationRepository.save(application);
     }
 
     private static CandidateJobApplicationResponseDTO mapJobPostingToCandidateJobApplicationResponseDTO(JobPosting jobPosting) {
@@ -280,6 +358,7 @@ public class JobPostingService {
 
     private static CandidateResponseDTO mapJobPostingCandidateToResponseDTO(JobApplication jobApplication) {
         return new CandidateResponseDTO(
+                jobApplication.getId(),
                 jobApplication.getCandidate().getUsername(),
                 jobApplication.getCandidate().getEmail(),
                 jobApplication.getScore(),

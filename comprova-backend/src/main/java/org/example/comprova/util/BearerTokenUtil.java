@@ -5,6 +5,9 @@ public class BearerTokenUtil {
     }
 
     public static String extractToken(String bearerToken) {
-        return bearerToken.replace("Bearer ", "");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7).trim();
+        }
+        return null;
     }
 }

@@ -1,7 +1,6 @@
 package org.example.comprova.dto;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.example.comprova.enums.EmploymentType;
 import org.example.comprova.enums.WorkplaceType;
@@ -29,13 +28,20 @@ public record CreateJobPostingDTO(
         String location,
 
         @NotEmpty(message = "Skills cannot be empty.")
-        List<JobSkillRequirementDTO> skills,
+        @Size(max = 20, message = "A job posting can have at most 20 skills.")
+        List<@Valid @NotNull(message = "Skill cannot be null.") JobSkillRequirementDTO> skills,
 
         @NotNull(message = "Expiration date cannot be null.")
         @Future(message = "Expiration date must be in the future.")
         LocalDateTime expiresAt,
 
         @NotEmpty(message = "Questions cannot be empty.")
-        List<QuestionDTO> questions
+        @Size(max = 20, message = "A job posting can have at most 20 questions.")
+        List<@Valid @NotNull(message = "Question cannot be null.") QuestionDTO> questions
 ) {
+    public CreateJobPostingDTO {
+        title = title == null ? null : title.trim();
+        description = description == null ? null : description.trim();
+        location = location == null ? null : location.trim();
+    }
 }

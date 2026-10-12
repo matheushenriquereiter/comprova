@@ -6,6 +6,7 @@ export interface JobSkillRequirement {
 }
 
 export interface CandidateResponseDTO {
+  applicationId: number;
   username: string;
   email: string;
   score?: number;
@@ -69,6 +70,15 @@ export interface QuestionDTO {
   evaluationCriteria: string[];
 }
 
+export interface CandidateQuestionDTO {
+  id?: number;
+  statement: string;
+  type: string;
+  skillEvaluated: string;
+  estimatedTimeMinutes?: number;
+  codeSnippet?: string;
+}
+
 export const JobService = {
   async getCompanyJobPostingById(_token: string, id: number): Promise<JobPostingResponseDTO> {
     return apiClient<JobPostingResponseDTO>(`/company/job-postings/${id}`, { method: "GET" });
@@ -98,7 +108,7 @@ export const JobService = {
   },
 
   async generateQuestions(_token: string, description: string, skills: JobSkillRequirement[]): Promise<QuestionDTO[]> {
-    return apiClient<QuestionDTO[]>('/generate-questions', {
+    return apiClient<QuestionDTO[]>('/company/generate-questions', {
       method: 'POST',
       body: JSON.stringify({ description, skills })
     });
@@ -111,15 +121,44 @@ export const JobService = {
     });
   },
 
-  async getCandidateTestQuestions(_token: string, applicationId: number): Promise<QuestionDTO[]> {
-    return apiClient<QuestionDTO[]>(`/candidate/applications/${applicationId}/test`, { method: 'GET' });
+  async getCandidateTestQuestions(_token: string, applicationId: number): Promise<CandidateQuestionDTO[]> {
+    return apiClient<CandidateQuestionDTO[]>(`/candidate/applications/${applicationId}/test`, { method: 'GET' });
   },
 
-  async submitCandidateTest(_token: string, applicationId: number, answers: Record<number, string>): Promise<{ score: number }> {
-    return apiClient<{ score: number }>(`/candidate/applications/${applicationId}/test`, {
+  async submitCandidateTest(_token: string, applicationId: number, answers: Record<number, string>): Promise<{ score: number; status?: string }> {
+    return apiClient<{ score: number; status?: string }>(`/candidate/applications/${applicationId}/test`, {
       method: 'POST',
       body: JSON.stringify({ answers })
     });
+  },
+
+  async updateApplicationStatus(
+    _token: string, 
+    applicationId: number, 
+    status: 'PASSED' | 'FAILED',
+    jobPostingId?: number
+  ): Promise<void> {
+    const primaryUrl = `/company/applications/${applicationId}/status`;
+    const fallbackUrl = jobPostingId 
+      ? `/company/job-postings/${jobPostingId}/applications/${applicationId}/status`
+      : null;
+
+    try {
+      await apiClient(primaryUrl, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      });
+    } catch (err: unknown) {
+      const errorMsg = (err as { message?: string })?.message || '';
+      if ((errorMsg.includes('Resource not found') || errorMsg.includes('Not Found')) && fallbackUrl) {
+        await apiClient(fallbackUrl, {
+          method: 'PUT',
+          body: JSON.stringify({ status })
+        });
+      } else {
+        throw err;
+      }
+    }
   },
 
   async deleteJobPosting(_token: string, id: number): Promise<void> {

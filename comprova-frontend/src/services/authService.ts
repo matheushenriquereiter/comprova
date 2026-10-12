@@ -1,6 +1,44 @@
 import { type User } from '../types/User';
 import { apiClient } from './apiClient';
 
+export interface CandidateProfile {
+  username: string;
+  email: string;
+  cpf: string;
+}
+
+export interface UpdateCandidateProfileData {
+  username: string;
+  email: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export interface CompanyProfileData {
+  username: string;
+  email: string;
+  legalName: string;
+  tradeName: string;
+  phone: string;
+  cnpj: string;
+}
+
+export interface UpdateCompanyProfileData {
+  legalName: string;
+  tradeName: string;
+  email: string;
+  phone: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export interface ProfileUpdateResponse {
+  username: string;
+  email: string;
+  token: string;
+  message: string;
+}
+
 export const AuthService = {
   async signIn(email: string, password: string): Promise<string> {
     try {
@@ -38,5 +76,40 @@ export const AuthService = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+
+  async getCandidateProfile(): Promise<CandidateProfile> {
+    return await apiClient<CandidateProfile>('/candidate/profile', {
+      method: 'GET'
+    });
+  },
+
+  async updateCandidateProfile(data: UpdateCandidateProfileData): Promise<ProfileUpdateResponse> {
+    const res = await apiClient<ProfileUpdateResponse>('/candidate/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    if (res?.token) {
+      localStorage.setItem('token', res.token);
+    }
+    return res;
+  },
+
+  async getCompanyProfile(): Promise<CompanyProfileData> {
+    return await apiClient<CompanyProfileData>('/company/profile', {
+      method: 'GET'
+    });
+  },
+
+  async updateCompanyProfile(data: UpdateCompanyProfileData): Promise<ProfileUpdateResponse> {
+    const res = await apiClient<ProfileUpdateResponse>('/company/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    if (res?.token) {
+      localStorage.setItem('token', res.token);
+    }
+    return res;
   }
 };
+

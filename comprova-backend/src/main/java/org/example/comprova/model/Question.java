@@ -36,7 +36,7 @@ public class Question {
     @Column(columnDefinition = "TEXT")
     private String codeSnippet;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "question_evaluation_criteria",
             joinColumns = @JoinColumn(name = "question_id")

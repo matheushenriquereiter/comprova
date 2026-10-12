@@ -29,4 +29,9 @@ public record UpdateJobPostingDTO(
         @NotNull(message = "Status cannot be null.")
         JobPostingStatus status
 ) {
+    public UpdateJobPostingDTO {
+        title = title == null ? null : title.trim();
+        description = description == null ? null : description.trim();
+        location = location == null ? null : location.trim();
+    }
 }

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
 import { AuthService } from '../../services/authService';
+import { getApiErrorMessage } from '../../utils/apiErrors';
+import { normalizeEmail, validateEmail } from '../../utils/validators';
 
 export function Login() {
   const navigate = useNavigate();
@@ -19,37 +21,26 @@ export function Login() {
   };
 
   const validateForm = () => {
-    const newErrors = { email: '', password: '' };
-    let isValid = true;
-    
-    if (!formData.email) {
-      newErrors.email = 'O email é obrigatório';
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Insira um email válido';
-      isValid = false;
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'A senha é obrigatória';
-      isValid = false;
-    }
+    const newErrors = {
+      email: validateEmail(formData.email),
+      password: formData.password ? '' : 'A senha é obrigatória',
+    };
 
     setErrors(newErrors);
-    return isValid;
+    return !newErrors.email && !newErrors.password;
   };
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
+    if (isSubmitting || !validateForm()) return;
+
     setIsSubmitting(true);
     setServerError(null);
 
     try {
-      const token = await AuthService.signIn(formData.email, formData.password);
+      const token = await AuthService.signIn(normalizeEmail(formData.email), formData.password);
       localStorage.setItem('token', token);
-      
+
       const userData = await AuthService.getMe(token);
       if (userData.role === 'ROLE_COMPANY') {
         navigate('/company/dashboard');
@@ -57,8 +48,8 @@ export function Login() {
         navigate('/candidate/dashboard');
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Ocorreu um erro no servidor. Tente novamente mais tarde.';
-      setServerError(msg);
+      localStorage.removeItem('token');
+      setServerError(getApiErrorMessage(error, 'Ocorreu um erro no servidor. Tente novamente mais tarde.'));
     } finally {
       setIsSubmitting(false);
     }

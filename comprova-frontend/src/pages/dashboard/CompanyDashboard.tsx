@@ -24,7 +24,7 @@ export function CompanyDashboard() {
   const fetchJobs = useCallback(async () => {
     try {
       const token = localStorage.getItem('token') || '';
-      const page = await JobService.getCompanyJobPostings(token);
+      const page = await JobService.getCompanyJobPostings(token, 0, 100);
       setJobs(page.content);
     } catch (err) {
       console.error(err);
@@ -138,6 +138,12 @@ export function CompanyDashboard() {
       setActiveTab('details');
       return;
     }
+    const expiresDate = `${jobFormData.expiresAt}T23:59:59`;
+    if (!editingJobId && new Date(expiresDate).getTime() <= Date.now()) {
+      setServerError("A data de expiração deve ser uma data futura.");
+      setActiveTab('details');
+      return;
+    }
     if (!jobFormData.description || jobFormData.description.length < 10) {
       setServerError("A descrição deve ter no mínimo 10 caracteres.");
       setActiveTab('details');
@@ -163,7 +169,6 @@ export function CompanyDashboard() {
     
     try {
       const token = localStorage.getItem('token') || '';
-      const expiresDate = `${jobFormData.expiresAt}T23:59:59`;
 
       if (editingJobId) {
         await JobService.updateJobPosting(token, editingJobId, {
@@ -488,7 +493,14 @@ export function CompanyDashboard() {
                   </select>
                 </div>
               ) : (
-                <AuthInput label="Data de Expiração" name="expiresAt" value={jobFormData.expiresAt} onChange={handleFormChange} type="date" />
+                <AuthInput 
+                  label="Data de Expiração" 
+                  name="expiresAt" 
+                  value={jobFormData.expiresAt} 
+                  onChange={handleFormChange} 
+                  type="date" 
+                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]} 
+                />
               )}
             </div>
             

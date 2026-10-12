@@ -35,8 +35,8 @@ export function CandidateAvailableJobs() {
       try {
         const token = localStorage.getItem('token') || '';
         const [availableJobsRes, appliedJobsRes] = await Promise.all([
-          JobService.getAvailableJobPostings(token),
-          JobService.getCandidateApplications(token)
+          JobService.getAvailableJobPostings(token, 0, 100),
+          JobService.getCandidateApplications(token, 0, 100)
         ]);
         setJobs(availableJobsRes.content);
         setAppliedJobs(new Set(appliedJobsRes.content.map((j) => j.jobPostingId)));
@@ -62,7 +62,7 @@ export function CandidateAvailableJobs() {
     try {
       const token = localStorage.getItem('token') || '';
       await JobService.applyToJobPosting(token, targetJob.id);
-      setAppliedJobs(prev => new Set(prev).add(confirmModalJob.id));
+      setAppliedJobs(prev => new Set([...prev, targetJob.id]));
       setConfirmModalJob(null);
       setSuccessModalOpen(true);
     } catch (err: unknown) {

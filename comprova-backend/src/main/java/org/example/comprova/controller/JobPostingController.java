@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.comprova.dto.CandidateJobApplicationResponseDTO;
 import org.example.comprova.dto.CandidateApplicationDTO;
+import org.example.comprova.dto.CandidateQuestionDTO;
 import org.example.comprova.dto.CreateJobPostingDTO;
 import org.example.comprova.dto.JobPostingResponseDTO;
-import org.example.comprova.dto.QuestionDTO;
+import org.example.comprova.dto.SubmitTestDTO;
+import org.example.comprova.dto.UpdateApplicationStatusDTO;
 import org.example.comprova.dto.UpdateJobPostingDTO;
 import org.example.comprova.model.Candidate;
 import org.example.comprova.model.Company;
@@ -19,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -62,19 +65,64 @@ public class JobPostingController {
     }
 
     @GetMapping("/candidate/applications/{applicationId}/test")
-    public ResponseEntity<List<QuestionDTO>> getTestQuestions(
+    public ResponseEntity<List<CandidateQuestionDTO>> getTestQuestions(
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
         return ResponseEntity.ok(jobPostingService.getApplicationTestQuestions(applicationId, candidate));
     }
 
     @PostMapping("/candidate/applications/{applicationId}/test")
-    public ResponseEntity<java.util.Map<String, Integer>> submitTest(
-            @RequestBody org.example.comprova.dto.SubmitTestDTO submitTestDTO,
+    public ResponseEntity<Map<String, Object>> submitTest(
+            @Valid @RequestBody SubmitTestDTO submitTestDTO,
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
         Integer score = jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);
-        return ResponseEntity.ok(java.util.Map.of("score", score));
+        return ResponseEntity.ok(Map.of(
+                "score", score,
+                "status", "TEST_COMPLETED"
+        ));
+    }
+
+    @PutMapping({
+            "/company/applications/{applicationId}/status",
+            "/company/job-postings/{jobPostingId}/applications/{applicationId}/status"
+    })
+    public ResponseEntity<Void> updateApplicationStatus(
+            @AuthenticationPrincipal Company company,
+            @PathVariable(value = "jobPostingId", required = false) Long jobPostingId,
+            @PathVariable("applicationId") Long applicationId,
+            @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
+    ) {
+        jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping({
+            "/company/applications/{applicationId}/status",
+            "/company/job-postings/{jobPostingId}/applications/{applicationId}/status"
+    })
+    public ResponseEntity<Void> patchApplicationStatus(
+            @AuthenticationPrincipal Company company,
+            @PathVariable(value = "jobPostingId", required = false) Long jobPostingId,
+            @PathVariable("applicationId") Long applicationId,
+            @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
+    ) {
+        jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping({
+            "/company/applications/{applicationId}/status",
+            "/company/job-postings/{jobPostingId}/applications/{applicationId}/status"
+    })
+    public ResponseEntity<Void> postApplicationStatus(
+            @AuthenticationPrincipal Company company,
+            @PathVariable(value = "jobPostingId", required = false) Long jobPostingId,
+            @PathVariable("applicationId") Long applicationId,
+            @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
+    ) {
+        jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/candidate/available-job-postings")

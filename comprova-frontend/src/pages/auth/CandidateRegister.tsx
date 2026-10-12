@@ -3,35 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
 import { AuthService } from '../../services/authService';
-
-const validateCPF = (cpf: string) => {
-  cpf = cpf.replace(/\D/g, '');
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(cpf)) return false;
-      
-  let add = 0;
-  for (let i = 0; i < 9; i++) add += parseInt(cpf.charAt(i)) * (10 - i);
-  let rev = 11 - (add % 11);
-  if (rev === 10 || rev === 11) rev = 0;
-  if (rev !== parseInt(cpf.charAt(9))) return false;
-      
-  add = 0;
-  for (let i = 0; i < 10; i++) add += parseInt(cpf.charAt(i)) * (11 - i);
-  rev = 11 - (add % 11);
-  if (rev === 10 || rev === 11) rev = 0;
-  if (rev !== parseInt(cpf.charAt(10))) return false;
-      
-  return true;
-};
-
-const formatCPF = (value: string) => {
-  return value
-    .replace(/\D/g, '')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-    .replace(/(-\d{2})\d+?$/, '$1');
-};
+import { getApiErrorMessage, getApiFieldErrors } from '../../utils/apiErrors';
+import {
+  USERNAME_MAX,
+  formatCPF,
+  normalizeEmail,
+  onlyDigits,
+  validateCPF,
+  validateEmail,
+  validatePassword,
+  validateUsername,
+} from '../../utils/validators';
 
 export function CandidateRegister() {
   const navigate = useNavigate();
@@ -43,7 +25,7 @@ export function CandidateRegister() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const newValue = name === 'cpf' ? formatCPF(value) : value;
-    
+
     setFormData(prev => ({ ...prev, [name]: newValue }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     if (serverError) setServerError('');
@@ -51,23 +33,21 @@ export function CandidateRegister() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!formData.username) newErrors.username = 'O nome de usuário é obrigatório';
-    else if (formData.username.length < 3) newErrors.username = 'Mínimo de 3 caracteres';
-    else if (formData.username.length > 20) newErrors.username = 'Máximo de 20 caracteres';
+    const usernameError = validateUsername(formData.username);
+    if (usernameError) newErrors.username = usernameError;
 
-    if (!formData.email) newErrors.email = 'O email é obrigatório';
-    else if (!emailRegex.test(formData.email)) newErrors.email = 'Insira um email válido';
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
     if (!formData.cpf) newErrors.cpf = 'O CPF é obrigatório';
     else if (!validateCPF(formData.cpf)) newErrors.cpf = 'Insira um CPF válido';
 
-    if (!formData.password) newErrors.password = 'A senha é obrigatória';
-    else if (formData.password.length < 8) newErrors.password = 'Mínimo de 8 caracteres';
-    else if (formData.password.length > 128) newErrors.password = 'Máximo de 128 caracteres';
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirme a senha';
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -75,41 +55,34 @@ export function CandidateRegister() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
+    if (isSubmitting || !validateForm()) return;
+
     setIsSubmitting(true);
     setServerError('');
 
     try {
+      const email = normalizeEmail(formData.email);
+
       // 1. Cadastra o candidato
       await AuthService.signUpCandidate({
-        username: formData.username,
-        email: formData.email,
-        cpf: formData.cpf.replace(/\D/g, ''),
+        username: formData.username.trim(),
+        email,
+        cpf: onlyDigits(formData.cpf),
         password: formData.password
       });
 
       // 2. Realiza o login automático
-      const token = await AuthService.signIn(formData.email, formData.password);
+      const token = await AuthService.signIn(email, formData.password);
       localStorage.setItem('token', token);
-      
-      // 3. Redireciona para o dashboard correto
-      navigate('/candidate/dashboard');
 
+      // 3. Redireciona para o dashboard
+      navigate('/candidate/dashboard');
     } catch (err: unknown) {
-      const data = err as { message?: string; errors?: Array<{ field: string; message: string }> };
-      if (data?.message === "Username is already in use.") {
-        setErrors(prev => ({ ...prev, username: 'Este nome de usuário já está em uso.' }));
-      } else if (data?.message === "Email address is already in use.") {
-        setErrors(prev => ({ ...prev, email: 'Este email já está em uso.' }));
-      } else if (data?.errors && data.errors.length > 0) {
-        const apiErrors: Record<string, string> = {};
-        data.errors.forEach(errorItem => {
-          if (errorItem.field) apiErrors[errorItem.field] = errorItem.message || 'Campo inválido';
-        });
-        setErrors(prev => ({ ...prev, ...apiErrors }));
+      const fieldErrors = getApiFieldErrors(err);
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(prev => ({ ...prev, ...fieldErrors }));
       } else {
-        setServerError(data?.message || 'Erro ao registrar. Verifique os dados ou tente novamente mais tarde.');
+        setServerError(getApiErrorMessage(err, 'Erro ao registrar. Verifique os dados ou tente novamente mais tarde.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -120,76 +93,80 @@ export function CandidateRegister() {
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {serverError && (
-          <div className="p-3 mb-2 bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] text-sm rounded-[4px]">
+          <div role="alert" className="p-3 mb-2 bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] text-sm rounded-[4px]">
             {serverError}
           </div>
         )}
-      
-        <AuthInput 
-          label="Nome de Usuário" 
-          name="username" 
-          type="text" 
+
+        <AuthInput
+          label="Nome de Usuário"
+          name="username"
+          type="text"
           placeholder="johndoe"
           value={formData.username}
           onChange={handleChange}
           error={errors.username}
           autoComplete="username"
           disabled={isSubmitting}
-          required 
-          maxLength={20}
+          required
+          maxLength={USERNAME_MAX}
         />
-        
-        <AuthInput 
-          label="Email" 
-          name="email" 
-          type="email" 
+
+        <AuthInput
+          label="Email"
+          name="email"
+          type="email"
           placeholder="usuario@exemplo.com"
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
           autoComplete="email"
           disabled={isSubmitting}
-          required 
+          required
+          maxLength={254}
         />
-        
-        <AuthInput 
-          label="CPF" 
-          name="cpf" 
-          type="text" 
+
+        <AuthInput
+          label="CPF"
+          name="cpf"
+          type="text"
+          inputMode="numeric"
           placeholder="000.000.000-00"
           value={formData.cpf}
           onChange={handleChange}
           error={errors.cpf}
           autoComplete="off"
           disabled={isSubmitting}
-          required 
+          required
           maxLength={14}
         />
 
-        <AuthInput 
-          label="Senha" 
-          name="password" 
-          type="password" 
+        <AuthInput
+          label="Senha"
+          name="password"
+          type="password"
           placeholder="••••••••"
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
           autoComplete="new-password"
           disabled={isSubmitting}
-          required 
+          required
+          maxLength={72}
         />
 
-        <AuthInput 
-          label="Confirmar Senha" 
-          name="confirmPassword" 
-          type="password" 
+        <AuthInput
+          label="Confirmar Senha"
+          name="confirmPassword"
+          type="password"
           placeholder="••••••••"
           value={formData.confirmPassword}
           onChange={handleChange}
           error={errors.confirmPassword}
           autoComplete="new-password"
           disabled={isSubmitting}
-          required 
+          required
+          maxLength={72}
         />
 
         <div className="pt-2">

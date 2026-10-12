@@ -1,17 +1,16 @@
 import { WORKPLACE_MAP, EMPLOYMENT_MAP } from "../../utils/constants";
 import type { CandidateApplicationDTO } from "../../services/jobService";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Briefcase, 
   Building, 
   Clock, 
   MapPin, 
-  CheckCircle, 
   Search, 
-  ArrowRight, 
   Sparkles, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { JobService } from '../../services/jobService';
@@ -25,22 +24,77 @@ export function CandidateDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token') || '';
-        const res = await JobService.getCandidateApplications(token);
-        setApplications(res.content);
-        setError('');
-      } catch (err: unknown) {
+  const fetchApplications = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await JobService.getCandidateApplications(token, 0, 100);
+      setApplications(res.content);
+      setError('');
+    } catch (err: unknown) {
+      if (!silent) {
         setError((err as Error).message || 'Erro ao carregar candidaturas.');
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchApplications();
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchApplications(false);
+  }, [fetchApplications]);
+
+  const isLocallySubmitted = useCallback((applicationId: number | string): boolean => {
+    const val = localStorage.getItem(`submitted_test_${applicationId}`) ||
+                sessionStorage.getItem(`submitted_test_${applicationId}`);
+    if (!val) return false;
+    const ts = Number(val);
+    if (!isNaN(ts) && ts > 0) {
+      // Se já passou mais de 15 minutos e continua PENDING_TEST, expira
+      if (Date.now() - ts > 15 * 60 * 1000) {
+        localStorage.removeItem(`submitted_test_${applicationId}`);
+        sessionStorage.removeItem(`submitted_test_${applicationId}`);
+        return false;
+      }
+    }
+    return true;
+  }, []);
+
+  const getEffectiveStatus = useCallback((app: CandidateApplicationDTO): string => {
+    // Se o backend já persistiu um status final
+    if (app.status !== 'PENDING_TEST' && app.status !== 'EVALUATING') {
+      return app.status;
+    }
+
+    // Se o backend marcou como EVALUATING ou se o candidato submeteu nesta máquina
+    if (app.status === 'EVALUATING' || isLocallySubmitted(app.applicationId)) {
+      return 'EVALUATING';
+    }
+
+    return app.status;
+  }, [isLocallySubmitted]);
+
+  // Limpa as flags locais de submissão quando a avaliação for finalizada pelo backend
+  useEffect(() => {
+    applications.forEach(app => {
+      if (app.status !== 'PENDING_TEST' && app.status !== 'EVALUATING') {
+        localStorage.removeItem(`submitted_test_${app.applicationId}`);
+        sessionStorage.removeItem(`submitted_test_${app.applicationId}`);
+      }
+    });
+  }, [applications]);
+
+  // Polling automático caso haja avaliações em andamento por IA
+  useEffect(() => {
+    const hasEvaluating = applications.some(a => getEffectiveStatus(a) === 'EVALUATING');
+    if (!hasEvaluating) return;
+
+    const intervalId = setInterval(() => {
+      fetchApplications(true);
+    }, 3500);
+
+    return () => clearInterval(intervalId);
+  }, [applications, getEffectiveStatus, fetchApplications]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Data recente';
@@ -52,18 +106,22 @@ export function CandidateDashboard() {
     }
   };
 
-  const getStatusConfig = (app: CandidateApplicationDTO) => {
-    const isClosed = app.jobPostingStatus === 'CLOSED' || app.status === 'CLOSED';
-    const isPendingTest = app.status === 'PENDING_TEST';
-    const isEvaluating = app.status === 'EVALUATING';
-    const isPassed = app.status === 'PASSED';
-    const isFailed = app.status === 'FAILED';
+  const getStatusConfig = (app: CandidateApplicationDTO, effectiveStatus: string) => {
+    const isClosed = app.jobPostingStatus === 'CLOSED' || effectiveStatus === 'CLOSED';
+    const isPendingTest = effectiveStatus === 'PENDING_TEST';
 
     if (isClosed) {
       return {
         text: 'Encerrada',
         badgeClass: 'bg-[#f1f3f4] text-[#5f6368] border-[#dadce0]',
         dotClass: 'bg-[#80868b]',
+      };
+    }
+    if (effectiveStatus === 'EVALUATING') {
+      return {
+        text: 'Correção por IA em andamento',
+        badgeClass: 'bg-[#e8f0fe] text-[#1a73e8] border-[#d2e3fc]',
+        dotClass: 'bg-[#1a73e8] animate-pulse',
       };
     }
     if (isPendingTest) {
@@ -73,39 +131,32 @@ export function CandidateDashboard() {
         dotClass: 'bg-[#f2994a] animate-pulse',
       };
     }
-    if (isEvaluating) {
-      return {
-        text: 'Em Avaliação IA',
-        badgeClass: 'bg-[#e8f0fe] text-[#1a73e8] border-[#d2e3fc]',
-        dotClass: 'bg-[#1a73e8]',
-      };
-    }
-    if (isPassed) {
+    if (effectiveStatus === 'PASSED') {
       return {
         text: 'Aprovado',
         badgeClass: 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]',
         dotClass: 'bg-[#137333]',
       };
     }
-    if (isFailed) {
+    if (effectiveStatus === 'FAILED') {
       return {
-        text: 'Não Selecionado',
+        text: 'Reprovado',
         badgeClass: 'bg-[#fce8e6] text-[#c5221f] border-[#fad2cf]',
-        dotClass: 'bg-[#d93025]',
+        dotClass: 'bg-[#c5221f]',
       };
     }
     return {
-      text: 'Candidatura Enviada',
+      text: 'Aguardando decisão',
       badgeClass: 'bg-[#e8f0fe] text-[#1a73e8] border-[#d2e3fc]',
       dotClass: 'bg-[#1a73e8]',
     };
   };
 
-  // Counts for tabs
-  const pendingCount = applications.filter(a => a.status === 'PENDING_TEST').length;
-  const doneCount = applications.filter(a => a.status !== 'PENDING_TEST' && a.status !== 'CLOSED').length;
+  // Contagens para os filtros de aba baseadas no status efetivo
+  const pendingCount = applications.filter(a => getEffectiveStatus(a) === 'PENDING_TEST').length;
+  const doneCount = applications.filter(a => getEffectiveStatus(a) !== 'PENDING_TEST').length;
 
-  // Filtered by search and tab
+  // Filtragem por busca e por aba
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
       app.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,11 +164,12 @@ export function CandidateDashboard() {
 
     if (!matchesSearch) return false;
 
+    const effStatus = getEffectiveStatus(app);
     if (statusFilter === 'PENDING') {
-      return app.status === 'PENDING_TEST';
+      return effStatus === 'PENDING_TEST';
     }
     if (statusFilter === 'DONE') {
-      return app.status !== 'PENDING_TEST';
+      return effStatus !== 'PENDING_TEST';
     }
     return true;
   });
@@ -136,9 +188,8 @@ export function CandidateDashboard() {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Link 
             to="/candidate/jobs"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-[#1a73e8] text-[#1a73e8] hover:bg-[#e8f0fe] text-xs font-semibold rounded-full transition-colors shadow-xs shrink-0 cursor-pointer"
+            className="hidden sm:inline-flex items-center justify-center px-4 py-2 bg-white border border-[#1a73e8] text-[#1a73e8] hover:bg-[#e8f0fe] text-xs font-semibold rounded-full transition-colors shadow-xs shrink-0 cursor-pointer"
           >
-            <Search className="w-3.5 h-3.5" />
             Explorar Novas Vagas
           </Link>
           <div className="relative w-full md:w-80">
@@ -161,7 +212,7 @@ export function CandidateDashboard() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`cursor-pointer px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                 statusFilter === 'ALL'
                   ? 'bg-[#1a73e8] text-white shadow-xs'
                   : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
@@ -172,7 +223,7 @@ export function CandidateDashboard() {
             
             <button
               onClick={() => setStatusFilter('PENDING')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`cursor-pointer px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
                 statusFilter === 'PENDING'
                   ? 'bg-[#1a73e8] text-white shadow-xs'
                   : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
@@ -186,13 +237,13 @@ export function CandidateDashboard() {
             
             <button
               onClick={() => setStatusFilter('DONE')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`cursor-pointer px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                 statusFilter === 'DONE'
                   ? 'bg-[#1a73e8] text-white shadow-xs'
                   : 'bg-white border border-[#dadce0] text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]'
               }`}
             >
-              Avaliadas / Finalizadas ({doneCount})
+              Testes Concluídos ({doneCount})
             </button>
           </div>
 
@@ -218,10 +269,9 @@ export function CandidateDashboard() {
               </p>
               <Link 
                 to="/candidate/jobs" 
-                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-medium rounded-full shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center justify-center px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-medium rounded-full shadow-sm transition-all cursor-pointer"
               >
                 Procurar Vagas Agora
-                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           ) : filteredApplications.length === 0 ? (
@@ -237,10 +287,10 @@ export function CandidateDashboard() {
           ) : (
             <div className="space-y-3.5">
               {filteredApplications.map((app) => {
-                const isPendingTest = app.status === 'PENDING_TEST';
-                const isEvaluating = app.status === 'EVALUATING';
-                const isPassed = app.status === 'PASSED';
-                const statusConfig = getStatusConfig(app);
+                const effectiveStatus = getEffectiveStatus(app);
+                const isPendingTest = effectiveStatus === 'PENDING_TEST';
+                const isEvaluating = effectiveStatus === 'EVALUATING';
+                const statusConfig = getStatusConfig(app, effectiveStatus);
                 
                 // First initial of the company name for LinkedIn-style avatar
                 const companyInitial = app.companyName 
@@ -326,31 +376,23 @@ export function CandidateDashboard() {
                     </div>
 
                     {/* Right CTA / Action Area (LinkedIn style) */}
-                    <div className="w-full sm:w-auto shrink-0 flex items-center justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4]">
-                      {isPendingTest ? (
+                    {isPendingTest ? (
+                      <div className="w-full sm:w-auto shrink-0 flex items-center justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4]">
                         <Link 
                           to={`/candidate/test/${app.applicationId}`}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold rounded-full shadow-xs hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30"
+                          className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold rounded-full shadow-xs hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30"
                         >
                           Fazer Teste Técnico
-                          <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
-                      ) : isEvaluating ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] bg-[#e8f0fe] px-3 py-1.5 rounded-full">
-                          <Clock className="w-3.5 h-3.5 animate-spin" />
-                          Aguardando IA
+                      </div>
+                    ) : isEvaluating ? (
+                      <div className="w-full sm:w-auto shrink-0 flex items-center justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4]">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc]">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1a73e8]" />
+                          Avaliando respostas...
                         </span>
-                      ) : isPassed ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#137333] bg-[#e6f4ea] px-3 py-1.5 rounded-full">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          Aprovado
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[#80868b] hidden sm:inline">
-                          Atualizado
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : null}
 
                   </div>
                 );

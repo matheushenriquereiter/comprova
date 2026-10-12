@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = BearerTokenUtil.extractToken(bearerToken);
-        if (!jwtService.isTokenValid(token)) {
+        if (token == null || !jwtService.isTokenValid(token)) {
             return;
         }
 

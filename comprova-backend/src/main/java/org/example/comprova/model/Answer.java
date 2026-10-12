@@ -28,6 +28,9 @@ public class Answer {
 
     private Integer score;
 
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
+
     public Answer(JobApplication jobApplication, Question question, String responseText) {
         this.jobApplication = jobApplication;
         this.question = question;

@@ -1,3 +1,5 @@
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').trim().replace(/\/+$/, '');
+
 export const apiClient = async <T>(
   endpoint: string,
   options: RequestInit = {}
@@ -14,7 +16,10 @@ export const apiClient = async <T>(
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`/api${endpoint}`, {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE_URL}${cleanEndpoint}`;
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });

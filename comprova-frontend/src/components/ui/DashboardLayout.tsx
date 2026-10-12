@@ -15,13 +15,12 @@ export function DashboardLayout() {
   const navLinks = isCompany 
     ? [
         { path: '/company/dashboard', label: 'Vagas' },
-        { path: '#', label: 'Candidatos', disabled: true },
         { path: '/company/profile', label: 'Perfil' }
       ]
     : [
-        { path: '/candidate/jobs', label: 'Procurar Vagas' },
         { path: '/candidate/dashboard', label: 'Minhas Vagas' },
-        { path: '#', label: 'Testes Pendentes', disabled: true }
+        { path: '/candidate/jobs', label: 'Procurar Vagas' },
+        { path: '/candidate/profile', label: 'Perfil' }
       ];
 
   return (
@@ -43,21 +42,15 @@ export function DashboardLayout() {
               const isActive = location.pathname === link.path;
               return (
                 <div key={link.label} className="relative flex items-center h-16">
-                  {link.disabled ? (
-                    <span className="text-sm font-medium text-[#5f6368] cursor-not-allowed px-1">
-                      {link.label}
-                    </span>
-                  ) : (
-                    <Link
-                      to={link.path}
-                      className={`text-sm font-medium px-1 transition-colors ${
-                        isActive ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:text-[#202124]'
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                  {isActive && !link.disabled && (
+                  <Link
+                    to={link.path}
+                    className={`text-sm font-medium px-1 transition-colors ${
+                      isActive ? 'text-[#1a73e8]' : 'text-[#5f6368] hover:text-[#202124]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                  {isActive && (
                     <motion.div
                       layoutId="activeTabIndicator"
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1a73e8]"

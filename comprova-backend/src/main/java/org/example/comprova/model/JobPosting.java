@@ -24,8 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class JobPosting {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "job_seq_gen")
-    @SequenceGenerator(name = "job_seq_gen", sequenceName = "job_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)

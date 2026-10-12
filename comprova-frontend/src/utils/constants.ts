@@ -19,7 +19,8 @@ export const STATUS_MAP: Record<string, string> = {
 
 export const APPLICATION_STATUS_MAP: Record<string, string> = {
   'PENDING_TEST': 'Teste Pendente',
-  'EVALUATING': 'Em Análise',
+  'EVALUATING': 'Em Avaliação IA',
+  'TEST_COMPLETED': 'Aguardando decisão',
   'PASSED': 'Aprovado',
   'FAILED': 'Reprovado',
   'CLOSED': 'Encerrada'
