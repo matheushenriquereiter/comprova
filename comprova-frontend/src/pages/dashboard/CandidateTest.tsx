@@ -1,11 +1,12 @@
 import { JobService } from "../../services/jobService";
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Code, FileText, CheckCircle, AlertTriangle, CheckCircle2, Sparkles, Send } from 'lucide-react';
+import { ArrowLeft, Clock, Code, FileText, CheckCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { type CandidateQuestionDTO } from '../../services/jobService';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Modal } from '../../components/ui/Modal';
+import { AuthButton } from '../../components/ui/AuthButton';
 
 export function CandidateTest() {
   const { id } = useParams<{ id: string }>();
@@ -18,10 +19,41 @@ export function CandidateTest() {
   const [score, setScore] = useState<number | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   
-  // Minimal state to hold answers per question index
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  
+  const storageKey = id ? `test_progress_${id}` : '';
+
+  const [testSignature, setTestSignature] = useState<string>('');
+  const [answers, setAnswers] = useState<Record<number, string>>(() => {
+    if (!id) return {};
+    try {
+      const saved = sessionStorage.getItem(`test_progress_${id}`) || localStorage.getItem(`test_progress_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.answers === 'object' && parsed.answers !== null) {
+          return parsed.answers;
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+    return {};
+  });
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(() => {
+    if (!id) return 0;
+    try {
+      const saved = sessionStorage.getItem(`test_progress_${id}`) || localStorage.getItem(`test_progress_${id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.currentQuestionIndex === 'number' && parsed.currentQuestionIndex >= 0) {
+          return parsed.currentQuestionIndex;
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+    return 0;
+  });
+
   useEffect(() => {
     const fetchQuestions = async () => {
       if (!id) {
@@ -40,12 +72,33 @@ export function CandidateTest() {
         const appsRes = await JobService.getCandidateApplications(token, 0, 100);
         const myApp = appsRes.content?.find(a => a.applicationId === Number(id));
         if (myApp && myApp.status !== 'PENDING_TEST') {
+          sessionStorage.removeItem(`test_progress_${id}`);
+          localStorage.removeItem(`test_progress_${id}`);
           navigate('/candidate/dashboard', { replace: true });
           return;
         }
 
         // 2. Busca as questões da prova (que também é bloqueada pelo backend caso não seja PENDING_TEST)
         const data = await JobService.getCandidateTestQuestions(token, Number(id));
+        const signature = `${myApp?.createdAt ?? ''}:${data.map(q => q.id ?? q.statement).join('|')}`;
+
+        try {
+          const saved = sessionStorage.getItem(`test_progress_${id}`) || localStorage.getItem(`test_progress_${id}`);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed?.signature && parsed.signature !== signature) {
+              // Nova candidatura/prova reutilizando o mesmo ID após reset do banco
+              setCurrentQuestionIndex(0);
+              setAnswers({});
+            } else if (typeof parsed?.currentQuestionIndex === 'number') {
+              setCurrentQuestionIndex(Math.min(Math.max(0, parsed.currentQuestionIndex), Math.max(0, data.length - 1)));
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        setTestSignature(signature);
         setQuestions(data);
         setError('');
       } catch {
@@ -56,6 +109,17 @@ export function CandidateTest() {
     };
     fetchQuestions();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!storageKey || !testSignature || success) return;
+    const payload = JSON.stringify({
+      signature: testSignature,
+      currentQuestionIndex,
+      answers,
+    });
+    sessionStorage.setItem(storageKey, payload);
+    localStorage.setItem(storageKey, payload);
+  }, [storageKey, testSignature, currentQuestionIndex, answers, success]);
 
   const handleAnswerChange = (idx: number, value: string) => {
     setAnswers(prev => ({ ...prev, [idx]: value }));
@@ -77,6 +141,8 @@ export function CandidateTest() {
         allAnswers[idx] = answers[idx] ? answers[idx].trim() : '';
       });
       const responseData = await JobService.submitCandidateTest(token, Number(id), allAnswers);
+      sessionStorage.removeItem(`test_progress_${id}`);
+      localStorage.removeItem(`test_progress_${id}`);
       setScore(responseData.score);
       setSuccess(true);
     } catch (err: unknown) {
@@ -259,129 +325,45 @@ export function CandidateTest() {
       {/* Confirmation Modal */}
       <Modal
         isOpen={isConfirmModalOpen}
-        onClose={() => setIsConfirmModalOpen(false)}
+        onClose={() => !submitting && setIsConfirmModalOpen(false)}
         title="Confirmar Envio da Avaliação"
-        maxWidth="max-w-lg"
+        maxWidth="max-w-md"
         footer={
-          <div className="flex items-center justify-between w-full">
-            <button
-              type="button"
+          <>
+            <AuthButton
+              variant="secondary"
               onClick={() => setIsConfirmModalOpen(false)}
-              className="px-5 py-2 text-sm font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] rounded-full transition-colors cursor-pointer"
-            >
-              Voltar e revisar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmSubmit}
               disabled={submitting}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-[#1a73e8] hover:bg-[#1557b0] rounded-full shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
-              {hasUnanswered ? 'Enviar mesmo assim' : 'Confirmar e Enviar'}
-            </button>
-          </div>
+              Cancelar
+            </AuthButton>
+            <AuthButton
+              variant="primary"
+              onClick={handleConfirmSubmit}
+              isLoading={submitting}
+            >
+              Confirmar e Enviar
+            </AuthButton>
+          </>
         }
       >
-        <div className="space-y-4">
-          {/* Status Alert Banner */}
-          {hasUnanswered ? (
-            <div className="p-4 bg-[#fef7e0] border border-[#fce8b2] rounded-[8px] flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-[#b06000] shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-semibold text-[#202124]">
-                  {unansweredCount} {unansweredCount === 1 ? 'questão não foi respondida' : 'questões não foram respondidas'}
-                </h4>
-                <p className="text-xs text-[#5f6368] mt-1 leading-relaxed">
-                  Você respondeu {answeredCount} de {totalQuestions} questões. Respostas deixadas em branco receberão nota zero na correção automatizada por IA.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 bg-[#e6f4ea] border border-[#ceead6] rounded-[8px] flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#137333] shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-semibold text-[#202124]">
-                  Todas as {totalQuestions} questões foram respondidas!
-                </h4>
-                <p className="text-xs text-[#5f6368] mt-1 leading-relaxed">
-                  Excelente! Todas as questões têm respostas preenchidas e estão prontas para a avaliação da IA.
-                </p>
-              </div>
-            </div>
+        <div className="space-y-3">
+          <p className="text-sm text-[#202124]">
+            Tem certeza que deseja finalizar e enviar sua avaliação?
+          </p>
+
+          {hasUnanswered && (
+            <p className="text-sm text-[#202124] bg-[#fef7e0] border border-[#fce8b2] rounded-[4px] px-3 py-2">
+              Você respondeu <strong>{answeredCount} de {totalQuestions}</strong> questões.{' '}
+              {unansweredCount === 1
+                ? 'A questão em branco receberá nota zero.'
+                : `As ${unansweredCount} questões em branco receberão nota zero.`}
+            </p>
           )}
 
-          {/* Questions Quick Review */}
-          <div>
-            <div className="text-xs font-semibold text-[#5f6368] uppercase tracking-wider mb-2">
-              Resumo das questões
-            </div>
-            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-              {questions.map((q, idx) => {
-                const charCount = answers[idx]?.trim().length || 0;
-                const isAnswered = charCount > 0;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      setCurrentQuestionIndex(idx);
-                      setIsConfirmModalOpen(false);
-                    }}
-                    className="p-2.5 rounded-[6px] border border-[#dadce0] hover:border-[#1a73e8] hover:bg-[#f8f9fa] flex items-center justify-between cursor-pointer transition-all group"
-                    title="Clique para ir até esta questão"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                        isAnswered ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-[#fef7e0] text-[#b06000]'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-medium text-[#202124] truncate flex items-center gap-1.5">
-                          <span>Questão {idx + 1} • {q.skillEvaluated}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#f1f3f4] text-[#5f6368]">
-                            {q.type === 'PRACTICAL' ? 'Prática' : 'Teórica'}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-[#5f6368]">
-                          {isAnswered ? `${charCount} caracteres digitados` : 'Não respondida'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
-                        isAnswered ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-[#fef7e0] text-[#b06000]'
-                      }`}>
-                        {isAnswered ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3" />
-                            Preenchida
-                          </>
-                        ) : (
-                          <>
-                            <AlertTriangle className="w-3 h-3" />
-                            Em branco
-                          </>
-                        )}
-                      </span>
-                      <span className="text-xs text-[#1a73e8] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                        Ir &rarr;
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* AI Notice */}
-          <div className="p-3 bg-[#f8f9fa] border border-[#dadce0] rounded-[6px] text-xs text-[#5f6368] flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-[#1a73e8] shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              <strong className="text-[#202124]">Importante:</strong> Esta ação é definitiva e não poderá ser desfeita. Ao enviar, a Inteligência Artificial iniciará a correção imparcial das suas respostas.
-            </p>
-          </div>
+          <p className="text-sm text-[#5f6368]">
+            Esta ação não pode ser desfeita e suas respostas serão avaliadas imediatamente pela IA.
+          </p>
         </div>
       </Modal>
     </div>
