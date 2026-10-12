@@ -34,7 +34,11 @@ public class AiEvaluationService {
     private static final Pattern FALLBACK_INT_PATTERN = Pattern.compile("\\b(100|[1-9]?[0-9])\\b");
 
     @Transactional
-    public int evaluateApplicationTestSync(JobApplication application) {
+    public int evaluateApplicationTestSync(JobApplication detachedApplication) {
+        JobApplication application = (detachedApplication.getId() != null)
+                ? jobApplicationRepository.findById(detachedApplication.getId()).orElse(detachedApplication)
+                : detachedApplication;
+
         List<Answer> answers = answerRepository.findAllByJobApplication(application);
         int totalQuestions = (application.getJobPosting() != null && application.getJobPosting().getQuestions() != null)
                 ? application.getJobPosting().getQuestions().size()

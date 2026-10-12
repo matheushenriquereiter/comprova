@@ -214,6 +214,10 @@ public class JobPostingService {
                     .sorted(java.util.Comparator.comparing(Question::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
                     .toList();
 
+            if (application.getJobPosting().getSkills() != null) {
+                application.getJobPosting().getSkills().size();
+            }
+
             // Ensure an Answer is saved for EVERY question in the test
             for (int i = 0; i < questions.size(); i++) {
                 Question question = questions.get(i);
