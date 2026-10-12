@@ -8,7 +8,7 @@ export const apiClient = async <T>(
 
   const headers = new Headers(options.headers || {});
   
-  if (token) {
+  if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
@@ -26,7 +26,10 @@ export const apiClient = async <T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
-    throw errorData || new Error(response.statusText || "Erro na requisição da API");
+    const err = errorData && typeof errorData === 'object'
+      ? { status: response.status, ...errorData }
+      : { status: response.status, message: response.statusText || "Erro na requisição da API" };
+    throw err;
   }
 
   // Se a resposta for 204 No Content, ou se for vazia (length 0), não tentamos fazer o parse.

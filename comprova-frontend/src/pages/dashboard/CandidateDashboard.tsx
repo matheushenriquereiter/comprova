@@ -24,25 +24,45 @@ export function CandidateDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchApplications = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  const fetchApplications = useCallback(async (isPolling = false) => {
     try {
       const token = localStorage.getItem('token') || '';
       const res = await JobService.getCandidateApplications(token, 0, 100);
       setApplications(res.content);
       setError('');
     } catch (err: unknown) {
-      if (!silent) {
+      if (!isPolling) {
         setError((err as Error).message || 'Erro ao carregar candidaturas.');
       }
     } finally {
-      if (!silent) setLoading(false);
+      if (!isPolling) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchApplications(false);
-  }, [fetchApplications]);
+    let isMounted = true;
+    const token = localStorage.getItem('token') || '';
+    JobService.getCandidateApplications(token, 0, 100)
+      .then(res => {
+        if (isMounted) {
+          setApplications(res.content);
+          setError('');
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setError((err as Error).message || 'Erro ao carregar candidaturas.');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const isLocallySubmitted = useCallback((applicationId: number | string): boolean => {
     const val = localStorage.getItem(`submitted_test_${applicationId}`) ||

@@ -30,6 +30,9 @@ public class JobPostingController {
 
     @PostMapping("/company/job-postings")
     public ResponseEntity<Void> createJobPosting(@AuthenticationPrincipal Company company, @Valid @RequestBody CreateJobPostingDTO createJobPostingDTO) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.createJobPosting(company, createJobPostingDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -39,12 +42,18 @@ public class JobPostingController {
             @AuthenticationPrincipal Company company,
             @PathVariable Long jobPostingId
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         JobPostingResponseDTO jobPosting = jobPostingService.getJobPostingById(company, jobPostingId);
         return ResponseEntity.ok(jobPosting);
     }
 
     @GetMapping("/company/job-postings")
     public ResponseEntity<Page<JobPostingResponseDTO>> getCompanyJobPostings(@AuthenticationPrincipal Company company, Pageable pageable) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Page<JobPostingResponseDTO> jobPostings = jobPostingService.getCompanyJobPostings(company, pageable);
         return ResponseEntity.ok(jobPostings);
     }
@@ -54,12 +63,18 @@ public class JobPostingController {
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable("jobPostingId") Long jobPostingId
     ) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.applyToJobPosting(candidate, jobPostingId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/candidate/job-postings")
     public ResponseEntity<Page<CandidateApplicationDTO>> getCandidateApplications(@AuthenticationPrincipal Candidate candidate, Pageable pageable) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Page<CandidateApplicationDTO> candidateApplications = jobPostingService.getCandidateApplications(candidate, pageable);
         return ResponseEntity.ok(candidateApplications);
     }
@@ -68,6 +83,9 @@ public class JobPostingController {
     public ResponseEntity<List<CandidateQuestionDTO>> getTestQuestions(
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(jobPostingService.getApplicationTestQuestions(applicationId, candidate));
     }
 
@@ -76,6 +94,9 @@ public class JobPostingController {
             @Valid @RequestBody SubmitTestDTO submitTestDTO,
             @AuthenticationPrincipal Candidate candidate,
             @PathVariable Long applicationId) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Integer score = jobPostingService.submitApplicationTest(applicationId, candidate, submitTestDTO);
         return ResponseEntity.ok(Map.of(
                 "score", score,
@@ -93,6 +114,9 @@ public class JobPostingController {
             @PathVariable("applicationId") Long applicationId,
             @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
         return ResponseEntity.ok().build();
     }
@@ -107,6 +131,9 @@ public class JobPostingController {
             @PathVariable("applicationId") Long applicationId,
             @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
         return ResponseEntity.ok().build();
     }
@@ -121,6 +148,9 @@ public class JobPostingController {
             @PathVariable("applicationId") Long applicationId,
             @Valid @RequestBody UpdateApplicationStatusDTO updateApplicationStatusDTO
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.updateApplicationStatus(company, applicationId, updateApplicationStatusDTO);
         return ResponseEntity.ok().build();
     }
@@ -137,6 +167,9 @@ public class JobPostingController {
             @PathVariable Long jobPostingId,
             @Valid @RequestBody UpdateJobPostingDTO updateJobPostingDTO
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.updateJobPosting(company, jobPostingId, updateJobPostingDTO);
         return ResponseEntity.ok().build();
     }
@@ -146,6 +179,9 @@ public class JobPostingController {
             @AuthenticationPrincipal Company company,
             @PathVariable Long jobPostingId
     ) {
+        if (company == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         jobPostingService.deleteJobPosting(company, jobPostingId);
         return ResponseEntity.ok().build();
     }

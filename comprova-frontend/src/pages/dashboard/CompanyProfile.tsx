@@ -111,6 +111,9 @@ export function CompanyProfile() {
         currentPassword: formData.currentPassword || undefined,
         newPassword: formData.newPassword || undefined
       });
+      if (res.token) {
+        localStorage.setItem('token', res.token);
+      }
       setSuccessMessage(translateApiMessage(res.message, 'Informações atualizadas com sucesso.'));
       setFormData(prev => ({
         ...prev,

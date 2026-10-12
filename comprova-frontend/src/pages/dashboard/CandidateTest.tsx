@@ -69,7 +69,7 @@ export function CandidateTest() {
         const data = await JobService.getCandidateTestQuestions(token, Number(id));
         setQuestions(data);
         setError('');
-      } catch (_err: unknown) {
+      } catch {
         // Se a prova já foi enviada, está em correção ou não pode ser acessada, marca e redireciona ao painel
         if (id) {
           const nowStr = Date.now().toString();
@@ -109,7 +109,7 @@ export function CandidateTest() {
       const responseData = await JobService.submitCandidateTest(token, Number(id), allAnswers);
       setScore(responseData.score);
       setSuccess(true);
-    } catch (_err: unknown) {
+    } catch {
       // Se a requisição for abortada (por exemplo ao recarregar a página),
       // as flags já estão salvas e o recarregamento levará para o dashboard
     } finally {

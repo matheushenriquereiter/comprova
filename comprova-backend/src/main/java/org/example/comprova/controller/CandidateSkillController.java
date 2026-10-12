@@ -24,6 +24,9 @@ public class CandidateSkillController {
             @AuthenticationPrincipal Candidate candidate,
             @Valid @RequestBody CandidateSkillRequestDTO candidateSkillRequestDTO
     ) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         candidateSkillService.addSkill(
                 candidate,
@@ -39,6 +42,9 @@ public class CandidateSkillController {
     public ResponseEntity<List<CandidateSkillResponseDTO>> getCandidateSkills(
             @AuthenticationPrincipal Candidate candidate
     ) {
+        if (candidate == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         List<CandidateSkillResponseDTO> candidateSkills =
                 candidateSkillService.getCandidateSkills(candidate);

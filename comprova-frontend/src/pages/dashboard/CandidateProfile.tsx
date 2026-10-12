@@ -30,7 +30,6 @@ export function CandidateProfile() {
   });
 
   useEffect(() => {
-    setIsLoading(true);
     AuthService.getCandidateProfile()
       .then((data) => {
         setFormData(prev => ({
@@ -100,6 +99,9 @@ export function CandidateProfile() {
         newPassword: formData.newPassword || undefined
       });
 
+      if (res.token) {
+        localStorage.setItem('token', res.token);
+      }
       setSuccessMessage(translateApiMessage(res.message, 'Seu perfil foi atualizado com sucesso.'));
       setFormData(prev => ({
         ...prev,

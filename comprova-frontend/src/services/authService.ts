@@ -53,10 +53,15 @@ export const AuthService = {
     }
   },
 
-  async getMe(_token?: string): Promise<User> {
+  async getMe(token?: string): Promise<User> {
     try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       return await apiClient<User>('/auth/me', {
-        method: 'GET'
+        method: 'GET',
+        headers
       });
     } catch (err: unknown) {
       const error = err as { status?: number };

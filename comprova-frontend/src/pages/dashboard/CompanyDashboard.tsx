@@ -1,16 +1,11 @@
 import { STATUS_MAP, WORKPLACE_MAP } from "../../utils/constants";
-import { useCallback } from "react";
-import { useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Users, Wand2, Briefcase, Calendar, X, Trash2, Edit2, Save } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { AuthButton } from '../../components/ui/AuthButton';
 import { JobService, type JobSkillRequirement, type QuestionDTO, type CreateJobPostingDTO, type JobPostingResponseDTO } from '../../services/jobService';
-
-
-
-
 
 export function CompanyDashboard() {
   const navigate = useNavigate();
@@ -22,6 +17,7 @@ export function CompanyDashboard() {
   const [jobs, setJobs] = useState<JobPostingResponseDTO[]>([]);
   // Momento em que a tela abriu, usado no card "Expirando em breve"
   const [now] = useState(() => Date.now());
+  const minExpiryDate = useMemo(() => new Date(now + 86400000).toISOString().split('T')[0], [now]);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -526,7 +522,7 @@ export function CompanyDashboard() {
                   value={jobFormData.expiresAt} 
                   onChange={handleFormChange} 
                   type="date" 
-                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]} 
+                  min={minExpiryDate} 
                 />
               )}
             </div>
