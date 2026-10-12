@@ -20,7 +20,7 @@ request:
     token: "{{bearer_token}}"
   variables:
     - name: url
-      value: http://localhost:8080
+      value: http://147.15.28.60:8080
 bundled: false
 extensions:
   bruno:
